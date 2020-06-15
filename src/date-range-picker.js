@@ -4,7 +4,7 @@ import Emitter from './lib/emitter';
 import {shiftMonth, datesEq} from './lib/date-manip';
 import {cp} from './lib/fns';
 
-export var TinyDatePicker = TDP;
+export const TinyDatePicker = TDP;
 
 /**
 * The state values for the date range picker
@@ -32,27 +32,27 @@ export var TinyDatePicker = TDP;
  */
 export function DateRangePicker(container, opts) {
   opts = opts || {};
-  var emitter = Emitter();
-  var root = renderInto(container);
-  var hoverDate;
-  var state = {
+  const emitter = Emitter();
+  const root = renderInto(container);
+  let hoverDate;
+  const state = {
     start: undefined,
     end: undefined,
   };
-  var start = TDP(root.querySelector('.dr-cal-start'), cp({}, opts.startOpts, {
+  const start = TDP(root.querySelector('.dr-cal-start'), cp({}, opts.startOpts, {
     mode: 'dp-permanent',
     dateClass: dateClass,
   }));
-  var end = TDP(root.querySelector('.dr-cal-end'), cp({}, opts.endOpts, {
+  const end = TDP(root.querySelector('.dr-cal-end'), cp({}, opts.endOpts, {
     mode: 'dp-permanent',
     hilightedDate: shiftMonth(start.state.hilightedDate, 1),
     dateClass: dateClass,
   }));
-  var handlers = {
+  const handlers = {
     'statechange': onStateChange,
     'select': dateSelected,
   };
-  var me = {
+  const me = {
     state: state,
     setState: setState,
     on: emitter.on,
@@ -63,9 +63,9 @@ export function DateRangePicker(container, opts) {
   end.on(handlers);
 
   function onStateChange(_, dp) {
-    var d1 = start.state.hilightedDate;
-    var d2 = end.state.hilightedDate;
-    var diff = diffMonths(d1, d2);
+    const d1 = start.state.hilightedDate;
+    const d2 = end.state.hilightedDate;
+    const diff = diffMonths(d1, d2);
 
     if (diff === 1) {
       return;
@@ -83,7 +83,7 @@ export function DateRangePicker(container, opts) {
   }
 
   function dateSelected(_, dp) {
-    var dt = dp.state.selectedDate;
+    const dt = dp.state.selectedDate;
 
     if (!state.start || state.end) {
       setState({
@@ -99,7 +99,7 @@ export function DateRangePicker(container, opts) {
   };
 
   function setState(newState) {
-    for (var key in newState) {
+    for (const key in newState) {
       state[key] = newState[key];
     }
 
@@ -116,9 +116,9 @@ export function DateRangePicker(container, opts) {
   if (!/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     root.addEventListener('mouseover', function mouseOverDate(e) {
       if (e.target.classList.contains('dp-day')) {
-        var dt = new Date(parseInt(e.target.dataset.date));
-        var changed = !datesEq(dt, hoverDate);
-  
+        const dt = new Date(parseInt(e.target.dataset.date));
+        const changed = !datesEq(dt, hoverDate);
+
         if (changed) {
           hoverDate = dt;
           rerender();
@@ -128,10 +128,10 @@ export function DateRangePicker(container, opts) {
   }
 
   function dateClass(dt) {
-    var rangeClass = (state.end || hoverDate) &&
+    const rangeClass = (state.end || hoverDate) &&
                      state.start &&
                      inRange(dt, state.end || hoverDate, state.start);
-    var selectedClass = datesEq(dt, state.start) || datesEq(dt, state.end);
+    const selectedClass = datesEq(dt, state.start) || datesEq(dt, state.end);
 
     return (rangeClass ? 'dr-in-range ' : '') +
            (selectedClass ? 'dr-selected ' : '');

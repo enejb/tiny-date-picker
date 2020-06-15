@@ -62,7 +62,8 @@ describe('DatePickerOptions', () => {
   it('formats date w/ American english style by default', () => {
     const opts = DatePickerOptions();
 
-    expect(opts.format(new Date('2017-09-07T22:44:23.163Z')))
+    // expect(opts.format(new Date('2017-09-07T00:00:00.000Z')))
+    expect(opts.format(new Date(Date.parse('2017-09-07T00:00:00.000Z'))))
       .toEqual('9/7/2017');
   });
 

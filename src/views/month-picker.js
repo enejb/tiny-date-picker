@@ -27,16 +27,16 @@ function onChooseMonth(e, dp) {
  * @returns {string}
  */
 function render(dp) {
-  var opts = dp.opts;
-  var lang = opts.lang;
-  var months = lang.months;
-  var currentDate = dp.state.hilightedDate;
-  var currentMonth = currentDate.getMonth();
+  const opts = dp.opts;
+  const lang = opts.lang;
+  const months = lang.months;
+  const currentDate = dp.state.hilightedDate;
+  const currentMonth = currentDate.getMonth();
 
   return (
     '<div class="dp-months">' +
       months.map(function (month, i) {
-        var className = 'dp-month';
+        let className = 'dp-month';
         className += (currentMonth === i ? ' dp-current' : '');
 
         return (
@@ -56,8 +56,8 @@ function render(dp) {
 * @param {DatePickerContext} dp
  */
 function keyDown(e, dp) {
-  var key = e.keyCode;
-  var shiftBy =
+  const key =  e.code || e.keyCode;
+  const shiftBy =
     (key === Key.left) ? -1 :
     (key === Key.right) ? 1 :
     (key === Key.up) ? -3 :

@@ -1,7 +1,7 @@
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (global.TinyDatePicker = factory());
+  (global = global || self, global.TinyDatePicker = factory());
 }(this, (function () { 'use strict';
 
   /**
@@ -187,24 +187,24 @@
    */
 
   var english = {
-    days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    months: [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ],
-    today: 'Today',
-    clear: 'Clear',
-    close: 'Close',
+      days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      months: [
+          'January',
+          'February',
+          'March',
+          'April',
+          'May',
+          'June',
+          'July',
+          'August',
+          'September',
+          'October',
+          'November',
+          'December',
+      ],
+      today: 'Today',
+      clear: 'Clear',
+      close: 'Close',
   };
 
   /**
@@ -215,53 +215,58 @@
    * @returns {DatePickerOptions}
    */
   function DatePickerOptions(opts) {
-    opts = opts || {};
-    opts = cp(defaults(), opts);
-    var parse = dateOrParse(opts.parse);
-    opts.lang = cp(english, opts.lang);
-    opts.parse = parse;
-    opts.inRange = makeInRangeFn(opts);
-    opts.min = parse(opts.min || shiftYear(now(), -100));
-    opts.max = parse(opts.max || shiftYear(now(), 100));
-    opts.hilightedDate = opts.parse(opts.hilightedDate);
+      opts = opts || {};
+      opts = cp(defaults(), opts);
+      var parse = dateOrParse(opts.parse);
+      opts.lang = cp(english, opts.lang);
+      opts.parse = parse;
+      opts.inRange = makeInRangeFn(opts);
+      opts.min = parse(opts.min || shiftYear(now(), -100));
+      opts.max = parse(opts.max || shiftYear(now(), 100));
+      opts.hilightedDate = opts.parse(opts.hilightedDate);
+      opts.alignment = opts.alignment || 'left';
 
-    return opts;
+      return opts;
   }
 
   function defaults() {
-    return {
-      lang: english,
+      return {
+          lang: english,
 
-      // Possible values: dp-modal, dp-below, dp-permanent
-      mode: 'dp-modal',
+          // Possible values: dp-modal, dp-below, dp-permanent
+          mode: 'dp-modal',
 
-      // The date to hilight initially if the date picker has no
-      // initial value.
-      hilightedDate: now(),
+          // The date to hilight initially if the date picker has no
+          // initial value.
+          hilightedDate: now(),
 
-      format: function (dt) {
-        return (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();
-      },
+          format: function (dt) {
+              return (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();
+          },
 
-      parse: function (str) {
-        var date = new Date(str);
-        return isNaN(date) ? now() : date;
-      },
+          parse: function (str) {
+              var date = new Date(str);
+              return isNaN(date) ? now() : date;
+          },
 
-      dateClass: function () { },
+          dateClass: function () {
+          },
 
-      inRange: function () {
-        return true;
-      }
-    };
+          inRange: function () {
+              return true;
+          },
+
+          appendTo: document.body,
+          alignment: 'left'
+      };
   }
 
   function makeInRangeFn(opts) {
-    var inRange = opts.inRange; // Cache this version, and return a variant
+      var inRange = opts.inRange; // Cache this version, and return a variant
 
-    return function (dt, dp) {
-      return inRange(dt, dp) && opts.min <= dt && opts.max >= dt;
-    };
+      return function (dt, dp) {
+          return inRange(dt, dp) && opts.min <= dt && opts.max >= dt;
+      };
   }
 
   /**
@@ -339,15 +344,15 @@
    * @returns {string}
    */
   function render(dp) {
-    var opts = dp.opts;
-    var lang = opts.lang;
-    var state = dp.state;
-    var dayNames = lang.days;
-    var dayOffset = opts.dayOffset || 0;
-    var selectedDate = state.selectedDate;
-    var hilightedDate = state.hilightedDate;
-    var hilightedMonth = hilightedDate.getMonth();
-    var today = now().getTime();
+    const opts = dp.opts;
+    const lang = opts.lang;
+    const state = dp.state;
+    const dayNames = lang.days;
+    const dayOffset = opts.dayOffset || 0;
+    const selectedDate = state.selectedDate;
+    const hilightedDate = state.hilightedDate;
+    const hilightedMonth = hilightedDate.getMonth();
+    const today = now().getTime();
 
     return (
       '<div class="dp-cal">' +
@@ -368,10 +373,10 @@
             );
           }).join('') +
           mapDays(hilightedDate, dayOffset, function (date) {
-            var isNotInMonth = date.getMonth() !== hilightedMonth;
-            var isDisabled = !opts.inRange(date);
-            var isToday = date.getTime() === today;
-            var className = 'dp-day';
+            const isNotInMonth = date.getMonth() !== hilightedMonth;
+            const isDisabled = !opts.inRange(date);
+            const isToday = date.getTime() === today;
+            let className = 'dp-day';
             className += (isNotInMonth ? ' dp-edge-day' : '');
             className += (datesEq(date, hilightedDate) ? ' dp-current' : '');
             className += (datesEq(date, selectedDate) ? ' dp-selected' : '');
@@ -402,8 +407,8 @@
    * @param {DatePickerContext} dp
    */
   function keyDown(e, dp) {
-    var key = e.keyCode;
-    var shiftBy =
+    const key = e.code || e.keyCode;
+    const shiftBy =
       (key === Key.left) ? -1 :
       (key === Key.right) ? 1 :
       (key === Key.up) ? -7 :
@@ -449,14 +454,14 @@
   }
 
   function gotoNextMonth(e, dp) {
-    var hilightedDate = dp.state.hilightedDate;
+    const hilightedDate = dp.state.hilightedDate;
     dp.setState({
       hilightedDate: shiftMonth(hilightedDate, 1)
     });
   }
 
   function gotoPrevMonth(e, dp) {
-    var hilightedDate = dp.state.hilightedDate;
+    const hilightedDate = dp.state.hilightedDate;
     dp.setState({
       hilightedDate: shiftMonth(hilightedDate, -1)
     });
@@ -469,8 +474,8 @@
   }
 
   function mapDays(currentDate, dayOffset, fn) {
-    var result = '';
-    var iter = new Date(currentDate);
+    let result = '';
+    const iter = new Date(currentDate);
     iter.setDate(1);
     iter.setDate(1 - iter.getDay() + dayOffset);
 
@@ -483,7 +488,7 @@
 
     // We are going to have 6 weeks always displayed to keep a consistent
     // calendar size
-    for (var day = 0; day < (6 * 7); ++day) {
+    for (let day = 0; day < (6 * 7); ++day) {
       result += fn(iter);
       iter.setDate(iter.getDate() + 1);
     }
@@ -517,16 +522,16 @@
    * @returns {string}
    */
   function render$1(dp) {
-    var opts = dp.opts;
-    var lang = opts.lang;
-    var months = lang.months;
-    var currentDate = dp.state.hilightedDate;
-    var currentMonth = currentDate.getMonth();
+    const opts = dp.opts;
+    const lang = opts.lang;
+    const months = lang.months;
+    const currentDate = dp.state.hilightedDate;
+    const currentMonth = currentDate.getMonth();
 
     return (
       '<div class="dp-months">' +
         months.map(function (month, i) {
-          var className = 'dp-month';
+          let className = 'dp-month';
           className += (currentMonth === i ? ' dp-current' : '');
 
           return (
@@ -546,8 +551,8 @@
   * @param {DatePickerContext} dp
    */
   function keyDown$1(e, dp) {
-    var key = e.keyCode;
-    var shiftBy =
+    const key =  e.code || e.keyCode;
+    const shiftBy =
       (key === Key.left) ? -1 :
       (key === Key.right) ? 1 :
       (key === Key.up) ? -3 :
@@ -585,14 +590,14 @@
    * @returns {string}
    */
   function render$2(dp) {
-    var state = dp.state;
-    var currentYear = state.hilightedDate.getFullYear();
-    var selectedYear = state.selectedDate.getFullYear();
+    const state = dp.state;
+    const currentYear = state.hilightedDate.getFullYear();
+    const selectedYear = state.selectedDate.getFullYear();
 
     return (
       '<div class="dp-years">' +
         mapYears(dp, function (year) {
-          var className = 'dp-year';
+          let className = 'dp-year';
           className += (year === currentYear ? ' dp-current' : '');
           className += (year === selectedYear ? ' dp-selected' : '');
 
@@ -614,9 +619,9 @@
   }
 
   function keyDown$2(e, dp) {
-    var key = e.keyCode;
-    var opts = dp.opts;
-    var shiftBy =
+    const key = e.code || e.keyCode;
+    const opts = dp.opts;
+    const shiftBy =
       (key === Key.left || key === Key.up) ? 1 :
       (key === Key.right || key === Key.down) ? -1 :
       0;
@@ -627,7 +632,7 @@
       });
     } else if (shiftBy) {
       e.preventDefault();
-      var shiftedYear = shiftYear(dp.state.hilightedDate, shiftBy);
+      const shiftedYear = shiftYear(dp.state.hilightedDate, shiftBy);
 
       dp.setState({
         hilightedDate: constrainDate(shiftedYear, opts.min, opts.max),
@@ -636,10 +641,10 @@
   }
 
   function mapYears(dp, fn) {
-    var result = '';
-    var max = dp.opts.max.getFullYear();
+    let result = '';
+    const max = dp.opts.max.getFullYear();
 
-    for (var i = max; i >= dp.opts.min.getFullYear(); --i) {
+    for (let i = max; i >= dp.opts.min.getFullYear(); --i) {
       result += fn(i);
     }
 
@@ -647,289 +652,290 @@
   }
 
   /**
-   * @file Defines the base date picker behavior, overridden by various modes.
+   * @file Defines the base date picker behavior, overridden by constious modes.
    */
 
-  var views = {
-    day: dayPicker,
-    year: yearPicker,
-    month: monthPicker
+  const views = {
+      day: dayPicker,
+      year: yearPicker,
+      month: monthPicker,
   };
 
   function BaseMode(input, emit, opts) {
-    var detatchInputEvents; // A function that detaches all events from the input
-    var closing = false; // A hack to prevent calendar from re-opening when closing.
-    var selectedDate; // The currently selected date
-    var dp = {
-      // The root DOM element for the date picker, initialized on first open.
-      el: undefined,
-      opts: opts,
-      shouldFocusOnBlur: true,
-      shouldFocusOnRender: true,
-      state: initialState(),
-      adjustPosition: noop,
-      containerHTML: '<div class="dp"></div>',
+      let detatchInputEvents; // A function that detaches all events from the input
+      let closing = false; // A hack to prevent calendar from re-opening when closing.
+      let selectedDate; // The currently selected date
+      const dp = {
+          // The root DOM element for the date picker, initialized on first open.
+          el: undefined,
+          opts: opts,
+          shouldFocusOnBlur: true,
+          shouldFocusOnRender: true,
+          state: initialState(),
+          adjustPosition: noop,
+          containerHTML: '<div class="dp"></div>',
 
-      attachToDom: function () {
-        document.body.appendChild(dp.el);
-      },
+          attachToDom: function () {
+              opts.appendTo.appendChild(dp.el);
+          },
 
-      updateInput: function (selectedDate) {
-        var e = new CustomEvent('change', {bubbles: true});
-        e.simulated = true;
-        input.value = selectedDate ? opts.format(selectedDate) : '';
-        input.dispatchEvent(e);
-      },
+          updateInput: function (selectedDate) {
+              const e = new CustomEvent('change', { bubbles: true });
+              e.simulated = true;
+              input.value = selectedDate ? opts.format(selectedDate) : '';
+              input.dispatchEvent(e);
+          },
 
-      computeSelectedDate: function () {
-        return opts.parse(input.value);
-      },
+          computeSelectedDate: function () {
+              return opts.parse(input.value);
+          },
 
-      currentView: function() {
-        return views[dp.state.view];
-      },
+          currentView: function () {
+              return views[dp.state.view];
+          },
 
-      open: function () {
-        if (closing) {
-          return;
-        }
+          open: function () {
+              if (closing) {
+                  return;
+              }
 
-        if (!dp.el) {
-          dp.el = createContainerElement(opts, dp.containerHTML);
-          attachContainerEvents(dp);
-        }
+              if (!dp.el) {
+                  dp.el = createContainerElement(opts, dp.containerHTML);
+                  attachContainerEvents(dp);
+              }
 
-        selectedDate = constrainDate(dp.computeSelectedDate(), opts.min, opts.max);
-        dp.state.hilightedDate = selectedDate || opts.hilightedDate;
-        dp.state.view = 'day';
+              selectedDate = constrainDate(dp.computeSelectedDate(), opts.min, opts.max);
+              dp.state.hilightedDate = selectedDate || opts.hilightedDate;
+              dp.state.view = 'day';
 
-        dp.attachToDom();
-        dp.render();
+              dp.attachToDom();
+              dp.render();
 
-        emit('open');
-      },
+              emit('open');
+          },
 
-      isVisible: function () {
-        return !!dp.el && !!dp.el.parentNode;
-      },
+          isVisible: function () {
+              return !!dp.el && !!dp.el.parentNode;
+          },
 
-      hasFocus: function () {
-        var focused = document.activeElement;
-        return dp.el &&
-          dp.el.contains(focused) &&
-          focused.className.indexOf('dp-focuser') < 0;
-      },
+          hasFocus: function () {
+              const focused = document.activeElement;
+              return dp.el &&
+                  dp.el.contains(focused) &&
+                  focused.className.indexOf('dp-focuser') < 0;
+          },
 
-      shouldHide: function () {
-        return dp.isVisible();
-      },
+          shouldHide: function () {
+              return dp.isVisible();
+          },
 
-      close: function (becauseOfBlur) {
-        var el = dp.el;
+          close: function (becauseOfBlur) {
+              const el = dp.el;
 
-        if (!dp.isVisible()) {
-          return;
-        }
+              if (!dp.isVisible()) {
+                  return;
+              }
 
-        if (el) {
-          var parent = el.parentNode;
-          parent && parent.removeChild(el);
-        }
+              if (el) {
+                  const parent = el.parentNode;
+                  parent && parent.removeChild(el);
+              }
 
-        closing = true;
+              closing = true;
 
-        if (becauseOfBlur && dp.shouldFocusOnBlur) {
-          focusInput(input);
-        }
+              if (becauseOfBlur && dp.shouldFocusOnBlur) {
+                  focusInput(input);
+              }
 
-        // When we close, the input often gains refocus, which
-        // can then launch the date picker again, so we buffer
-        // a bit and don't show the date picker within N ms of closing
-        setTimeout(function() {
-          closing = false;
-        }, 100);
+              // When we close, the input often gains refocus, which
+              // can then launch the date picker again, so we buffer
+              // a bit and don't show the date picker within N ms of closing
+              setTimeout(function () {
+                  closing = false;
+              }, 100);
 
-        emit('close');
-      },
+              emit('close');
+          },
 
-      destroy: function () {
-        dp.close();
-        detatchInputEvents();
-      },
+          destroy: function () {
+              dp.close();
+              detatchInputEvents();
+          },
 
-      render: function () {
-        if (!dp.el || !dp.el.firstChild) {
-          return;
-        }
+          render: function () {
+              if (!dp.el) {
+                  return;
+              }
 
-        var hadFocus = dp.hasFocus();
-        var html = dp.currentView().render(dp);
-        html && (dp.el.firstChild.innerHTML = html);
+              const hadFocus = dp.hasFocus();
+              const html = dp.currentView().render(dp);
+              html && (dp.el.firstChild.innerHTML = html);
 
-        dp.adjustPosition();
+              dp.adjustPosition();
 
-        if (hadFocus || dp.shouldFocusOnRender) {
-          focusCurrent(dp);
-        }
-      },
+              if (hadFocus || dp.shouldFocusOnRender) {
+                  focusCurrent(dp);
+              }
+          },
 
-      // Conceptually similar to setState in React, updates
-      // the view state and re-renders.
-      setState: function (state) {
-        for (var key in state) {
-          dp.state[key] = state[key];
-        }
+          // Conceptually similar to setState in React, updates
+          // the view state and re-renders.
+          setState: function (state) {
+              for (const key in state) {
+                  dp.state[key] = state[key];
+              }
 
-        emit('statechange');
-        dp.render();
-      },
-    };
-
-    detatchInputEvents = attachInputEvents(input, dp);
-
-    // Builds the initial view state
-    // selectedDate is a special case and causes changes to hilightedDate
-    // hilightedDate is set on open, so remains undefined initially
-    // view is the current view (day, month, year)
-    function initialState() {
-      return {
-        get selectedDate() {
-          return selectedDate;
-        },
-        set selectedDate(dt) {
-          if (dt && !opts.inRange(dt)) {
-            return;
-          }
-
-          if (dt) {
-            selectedDate = new Date(dt);
-            dp.state.hilightedDate = selectedDate;
-          } else {
-            selectedDate = dt;
-          }
-
-          dp.updateInput(selectedDate);
-          emit('select');
-          dp.close();
-        },
-        view: 'day',
+              emit('statechange');
+              dp.render();
+          },
       };
-    }
 
-    return dp;
+      detatchInputEvents = attachInputEvents(input, dp);
+
+      // Builds the initial view state
+      // selectedDate is a special case and causes changes to hilightedDate
+      // hilightedDate is set on open, so remains undefined initially
+      // view is the current view (day, month, year)
+      function initialState() {
+          return {
+              get selectedDate() {
+                  return selectedDate;
+              },
+              set selectedDate(dt) {
+                  if (dt && !opts.inRange(dt)) {
+                      return;
+                  }
+
+                  if (dt) {
+                      selectedDate = new Date(dt);
+                      dp.state.hilightedDate = selectedDate;
+                  } else {
+                      selectedDate = dt;
+                  }
+
+                  dp.updateInput(selectedDate);
+                  emit('select');
+                  dp.close();
+              },
+              view: 'day',
+          };
+      }
+
+      return dp;
   }
 
   function createContainerElement(opts, containerHTML) {
-    var el = document.createElement('div');
+      const el = document.createElement('div');
 
-    el.className = opts.mode;
-    el.innerHTML = containerHTML;
+      el.className = opts.mode;
+      el.innerHTML = containerHTML;
 
-    return el;
+      return el;
   }
 
   function attachInputEvents(input, dp) {
-    var bufferShow = bufferFn(5, function () {
-      if (dp.shouldHide()) {
-        dp.close();
-      } else {
-        dp.open();
-      }
-    });
-
-    var off = [
-      on('blur', input, bufferFn(150, function () {
-        if (!dp.hasFocus()) {
-          dp.close(true);
-        }
-      })),
-
-      on('mousedown', input, function () {
-        if (input === document.activeElement) {
-          bufferShow();
-        }
-      }),
-
-      on('focus', input, bufferShow),
-
-      on('input', input, function (e) {
-        var date = dp.opts.parse(e.target.value);
-        isNaN(date) || dp.setState({
-          hilightedDate: date
-        });
-      }),
-    ];
-
-    // Unregister all events that were registered above.
-    return function() {
-      off.forEach(function (f) {
-        f();
+      const bufferShow = bufferFn(5, function () {
+          if (dp.shouldHide()) {
+              dp.close();
+          } else {
+              dp.open();
+          }
       });
-    };
+
+      const off = [
+          on('blur', input, bufferFn(150, function () {
+              if (!dp.hasFocus()) {
+                  dp.close(true);
+              }
+          })),
+
+          on('mousedown', input, function () {
+              if (input === document.activeElement) {
+                  bufferShow();
+              }
+          }),
+
+          on('focus', input, bufferShow),
+
+          on('input', input, function (e) {
+              const date = dp.opts.parse(e.target.value);
+              isNaN(date) || dp.setState({
+                  hilightedDate: date,
+              });
+          }),
+      ];
+
+      // Unregister all events that were registered above.
+      return function () {
+          off.forEach(function (f) {
+              f();
+          });
+      };
   }
 
   function focusCurrent(dp) {
-    var current = dp.el.querySelector('.dp-current');
-    return current && current.focus();
+      const current = dp.el.querySelector('.dp-current');
+      return current && current.focus();
   }
 
   function attachContainerEvents(dp) {
-    var el = dp.el;
-    var calEl = el.querySelector('.dp');
+      const el = dp.el;
+      const calEl = el.querySelector('.dp');
 
-    // Hack to get iOS to show active CSS states
-    el.ontouchstart = noop;
+      // Hack to get iOS to show active CSS states
+      el.ontouchstart = noop;
 
-    function onClick(e) {
-      e.target.className.split(' ').forEach(function(evt) {
-        var handler = dp.currentView().onClick[evt];
-        handler && handler(e, dp);
+      function onClick(e) {
+          e.target.className.split(' ').forEach(function (evt) {
+              const handler = dp.currentView().onClick[evt];
+              handler && handler(e, dp);
+          });
+      }
+
+      // The calender fires a blur event *every* time we redraw
+      // this means we need to buffer the blur event to see if
+      // it still has no focus after redrawing, and only then
+      // do we return focus to the input. A possible other approach
+      // would be to set context.redrawing = true on redraw and
+      // set it to false in the blur event.
+      on('blur', calEl, bufferFn(150, function () {
+          if (!dp.hasFocus()) {
+              dp.close(true);
+          }
+      }));
+
+      on('keydown', el, function (e) {
+          const code = e.code || e.keyCode;
+          if (code === Key.enter) {
+              onClick(e);
+          } else {
+              dp.currentView().onKeyDown(e, dp);
+          }
       });
-    }
 
-    // The calender fires a blur event *every* time we redraw
-    // this means we need to buffer the blur event to see if
-    // it still has no focus after redrawing, and only then
-    // do we return focus to the input. A possible other approach
-    // would be to set context.redrawing = true on redraw and
-    // set it to false in the blur event.
-    on('blur', calEl, bufferFn(150, function () {
-      if (!dp.hasFocus()) {
-        dp.close(true);
-      }
-    }));
+      // If the user clicks in non-focusable space, but
+      // still within the date picker, we don't want to
+      // hide, so we need to hack some things...
+      on('mousedown', calEl, function (e) {
+          e.target.focus && e.target.focus(); // IE hack
+          if (document.activeElement !== e.target) {
+              e.preventDefault();
+              focusCurrent(dp);
+          }
+      });
 
-    on('keydown', el, function (e) {
-      if (e.keyCode === Key.enter) {
-        onClick(e);
-      } else {
-        dp.currentView().onKeyDown(e, dp);
-      }
-    });
-
-    // If the user clicks in non-focusable space, but
-    // still within the date picker, we don't want to
-    // hide, so we need to hack some things...
-    on('mousedown', calEl, function (e) {
-      e.target.focus && e.target.focus(); // IE hack
-      if (document.activeElement !== e.target) {
-        e.preventDefault();
-        focusCurrent(dp);
-      }
-    });
-
-    on('click', el, onClick);
+      on('click', el, onClick);
   }
 
   function focusInput(input) {
-    // When the modal closes, we need to focus the original input so the
-    // user can continue tabbing from where they left off.
-    input.focus();
+      // When the modal closes, we need to focus the original input so the
+      // user can continue tabbing from where they left off.
+      input.focus();
 
-    // iOS zonks out if we don't blur the input, so...
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-      input.blur();
-    }
+      // iOS zonks out if we don't blur the input, so...
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+          input.blur();
+      }
   }
 
   /**
@@ -937,20 +943,20 @@
    */
 
   function ModalMode(input, emit, opts) {
-    var dp = BaseMode(input, emit, opts);
+      const dp = BaseMode(input, emit, opts);
 
-    // In modal mode, users really shouldn't be able to type in
-    // the input, as all input is done via the calendar.
-    input.readonly = true;
+      // In modal mode, users really shouldn't be able to type in
+      // the input, as all input is done via the calendar.
+      input.readonly = true;
 
-    // In modal mode, we need to know when the user has tabbed
-    // off the end of the calendar, and set focus to the original
-    // input. To do this, we add a special element to the DOM.
-    // When the user tabs off the bottom of the calendar, they
-    // will tab onto this element.
-    dp.containerHTML += '<a href="#" class="dp-focuser">.</a>';
+      // In modal mode, we need to know when the user has tabbed
+      // off the end of the calendar, and set focus to the original
+      // input. To do this, we add a special element to the DOM.
+      // When the user tabs off the bottom of the calendar, they
+      // will tab onto this element.
+      dp.containerHTML += '<a href="#" class="dp-focuser">.</a>';
 
-    return dp;
+      return dp;
   }
 
   /**
@@ -958,61 +964,65 @@
    */
 
   function DropdownMode(input, emit, opts) {
-    var dp = BaseMode(input, emit, opts);
+      const dp = BaseMode(input, emit, opts);
 
-    dp.shouldFocusOnBlur = false;
+      dp.shouldFocusOnBlur = false;
 
-    Object.defineProperty(dp, 'shouldFocusOnRender', {
-      get: function() {
-        return input !== document.activeElement;
+      Object.defineProperty(dp, 'shouldFocusOnRender', {
+          get: function () {
+              return input !== document.activeElement;
+          },
+      });
+
+      dp.adjustPosition = function () {
+          autoPosition(input, dp, opts.alignment);
+      };
+
+      return dp;
+  }
+
+  function autoPosition(input, dp, alignment) {
+      const inputPos = input.getBoundingClientRect();
+      const win = window;
+
+      adjustCalY(dp, inputPos, win);
+      adjustCalX(dp, inputPos, win, alignment);
+
+      dp.el.style.visibility = '';
+  }
+
+  function adjustCalX(dp, inputPos, win, alignment) {
+      const cal = dp.el;
+      const scrollLeft = win.pageXOffset;
+      const inputLeft = inputPos.left + scrollLeft;
+      const maxRight = win.innerWidth + scrollLeft;
+      const offsetWidth = cal.offsetWidth;
+      const calRight = inputLeft + offsetWidth;
+      const shiftedLeft = maxRight - offsetWidth;
+      const left = calRight > maxRight && shiftedLeft > 0 ? shiftedLeft : inputLeft;
+
+      if (alignment === 'right') {
+          cal.style.left = left + (inputPos.width - offsetWidth) + 'px';
+      } else {
+          cal.style.left = left + 'px';
       }
-    });
-
-    dp.adjustPosition = function () {
-      autoPosition(input, dp);
-    };
-
-    return dp;
-  }
-
-  function autoPosition(input, dp) {
-    var inputPos = input.getBoundingClientRect();
-    var win = window;
-
-    adjustCalY(dp, inputPos, win);
-    adjustCalX(dp, inputPos, win);
-
-    dp.el.style.visibility = '';
-  }
-
-  function adjustCalX(dp, inputPos, win) {
-    var cal = dp.el;
-    var scrollLeft = win.pageXOffset;
-    var inputLeft = inputPos.left + scrollLeft;
-    var maxRight = win.innerWidth + scrollLeft;
-    var offsetWidth = cal.offsetWidth;
-    var calRight = inputLeft + offsetWidth;
-    var shiftedLeft = maxRight - offsetWidth;
-    var left = calRight > maxRight && shiftedLeft > 0 ? shiftedLeft : inputLeft;
-
-    cal.style.left = left + 'px';
   }
 
   function adjustCalY(dp, inputPos, win) {
-    var cal = dp.el;
-    var scrollTop = win.pageYOffset;
-    var inputTop = scrollTop + inputPos.top;
-    var calHeight = cal.offsetHeight;
-    var belowTop = inputTop + inputPos.height + 8;
-    var aboveTop = inputTop - calHeight - 8;
-    var isAbove = (aboveTop > 0 && belowTop + calHeight > scrollTop + win.innerHeight);
-    var top = isAbove ? aboveTop : belowTop;
+      const cal = dp.el;
+      const scrollTop = win.pageYOffset;
+      const inputTop = scrollTop + inputPos.top;
+      const calHeight = cal.offsetHeight;
+      const belowTop = inputTop + inputPos.height + 8;
+      const aboveTop = inputTop - calHeight - 8;
+      const isAbove = (aboveTop > 0 && belowTop + calHeight > scrollTop + win.innerHeight);
+      const top = isAbove ? aboveTop : belowTop;
 
-    if (cal.classList) {
-      cal.classList.toggle('dp-is-above', isAbove);
-      cal.classList.toggle('dp-is-below', !isAbove);
-    }
-    cal.style.top = top + 'px';
+      if (cal.classList) {
+          cal.classList.toggle('dp-is-above', isAbove);
+          cal.classList.toggle('dp-is-below', !isAbove);
+      }
+      cal.style.top = top + 'px';
   }
 
   /**
@@ -1020,24 +1030,23 @@
    */
 
   function PermanentMode(root, emit, opts) {
-    var dp = BaseMode(root, emit, opts);
+      const dp = BaseMode(root, emit, opts);
 
-    dp.close = noop;
-    dp.destroy = noop;
-    dp.updateInput = noop;
-    dp.shouldFocusOnRender = opts.shouldFocusOnRender;
+      dp.close = noop;
+      dp.updateInput = noop;
+      dp.shouldFocusOnRender = opts.shouldFocusOnRender;
 
-    dp.computeSelectedDate = function () {
-      return opts.hilightedDate;
-    };
+      dp.computeSelectedDate = function () {
+          return opts.hilightedDate;
+      };
 
-    dp.attachToDom = function () {
-      root.appendChild(dp.el);
-    };
+      dp.attachToDom = function () {
+          root.appendChild(dp.el);
+      };
 
-    dp.open();
+      dp.open();
 
-    return dp;
+      return dp;
   }
 
   /**
@@ -1045,19 +1054,19 @@
    */
 
   function Mode(input, emit, opts) {
-    input = input && input.tagName ? input : document.querySelector(input);
+      input = input && input.tagName ? input : document.querySelector(input);
 
-    if (opts.mode === 'dp-modal') {
-      return ModalMode(input, emit, opts);
-    }
+      if (opts.mode === 'dp-modal') {
+          return ModalMode(input, emit, opts);
+      }
 
-    if (opts.mode === 'dp-below') {
-      return DropdownMode(input, emit, opts);
-    }
+      if (opts.mode === 'dp-below') {
+          return DropdownMode(input, emit, opts);
+      }
 
-    if (opts.mode === 'dp-permanent') {
-      return PermanentMode(input, emit, opts);
-    }
+      if (opts.mode === 'dp-permanent') {
+          return PermanentMode(input, emit, opts);
+      }
   }
 
   /**
@@ -1174,9 +1183,9 @@
    * @returns {DatePicker}
    */
   function TinyDatePicker(input, opts) {
-    var emitter = Emitter();
-    var options = DatePickerOptions(opts);
-    var mode = Mode(input, emit, options);
+    const emitter = Emitter();
+    const options = DatePickerOptions(opts);
+    const mode = Mode(input, emit, options);
     var me = {
       get state() {
         return mode.state;

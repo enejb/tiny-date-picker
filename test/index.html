@@ -124,7 +124,7 @@
         <input type="text" class="non-modal-txt txt-below" tabindex="401" />
       </div>
       <nav class="footer-links">
-        <a href="https://github.com/chrisdavies/tiny-date-picker">Get it at GitHub</a>
+        <a href="https://github.com/verivox/tiny-date-picker">Get it at GitHub</a>
       </nav>
     </main>
 
@@ -148,6 +148,13 @@
 
       TinyDatePicker('.non-modal-txt', {
         mode: 'dp-below',
+      });
+
+      document.write('<div class="perm" />');
+      TinyDatePicker(document.querySelector('.perm'), {
+        mode: 'dp-permanent',
+        min: '1/1/2200',
+        max: '1/1/2310',
       });
     </script>
   </body>

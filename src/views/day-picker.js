@@ -27,15 +27,15 @@ export default {
  * @returns {string}
  */
 function render(dp) {
-  var opts = dp.opts;
-  var lang = opts.lang;
-  var state = dp.state;
-  var dayNames = lang.days;
-  var dayOffset = opts.dayOffset || 0;
-  var selectedDate = state.selectedDate;
-  var hilightedDate = state.hilightedDate;
-  var hilightedMonth = hilightedDate.getMonth();
-  var today = now().getTime();
+  const opts = dp.opts;
+  const lang = opts.lang;
+  const state = dp.state;
+  const dayNames = lang.days;
+  const dayOffset = opts.dayOffset || 0;
+  const selectedDate = state.selectedDate;
+  const hilightedDate = state.hilightedDate;
+  const hilightedMonth = hilightedDate.getMonth();
+  const today = now().getTime();
 
   return (
     '<div class="dp-cal">' +
@@ -56,10 +56,10 @@ function render(dp) {
           );
         }).join('') +
         mapDays(hilightedDate, dayOffset, function (date) {
-          var isNotInMonth = date.getMonth() !== hilightedMonth;
-          var isDisabled = !opts.inRange(date);
-          var isToday = date.getTime() === today;
-          var className = 'dp-day';
+          const isNotInMonth = date.getMonth() !== hilightedMonth;
+          const isDisabled = !opts.inRange(date);
+          const isToday = date.getTime() === today;
+          let className = 'dp-day';
           className += (isNotInMonth ? ' dp-edge-day' : '');
           className += (datesEq(date, hilightedDate) ? ' dp-current' : '');
           className += (datesEq(date, selectedDate) ? ' dp-selected' : '');
@@ -90,8 +90,8 @@ function render(dp) {
  * @param {DatePickerContext} dp
  */
 function keyDown(e, dp) {
-  var key = e.keyCode;
-  var shiftBy =
+  const key = e.code || e.keyCode;
+  const shiftBy =
     (key === Key.left) ? -1 :
     (key === Key.right) ? 1 :
     (key === Key.up) ? -7 :
@@ -137,14 +137,14 @@ function showYearPicker(e, dp) {
 }
 
 function gotoNextMonth(e, dp) {
-  var hilightedDate = dp.state.hilightedDate;
+  const hilightedDate = dp.state.hilightedDate;
   dp.setState({
     hilightedDate: shiftMonth(hilightedDate, 1)
   });
 }
 
 function gotoPrevMonth(e, dp) {
-  var hilightedDate = dp.state.hilightedDate;
+  const hilightedDate = dp.state.hilightedDate;
   dp.setState({
     hilightedDate: shiftMonth(hilightedDate, -1)
   });
@@ -157,8 +157,8 @@ function selectDay(e, dp) {
 }
 
 function mapDays(currentDate, dayOffset, fn) {
-  var result = '';
-  var iter = new Date(currentDate);
+  let result = '';
+  const iter = new Date(currentDate);
   iter.setDate(1);
   iter.setDate(1 - iter.getDay() + dayOffset);
 
@@ -171,7 +171,7 @@ function mapDays(currentDate, dayOffset, fn) {
 
   // We are going to have 6 weeks always displayed to keep a consistent
   // calendar size
-  for (var day = 0; day < (6 * 7); ++day) {
+  for (let day = 0; day < (6 * 7); ++day) {
     result += fn(iter);
     iter.setDate(iter.getDate() + 1);
   }
