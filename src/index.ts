@@ -1,3 +1,3 @@
-export default function TinyDatePicker() {
+export default function TinyDatePicker(): unknown {
     return { hello: "World" }
 }

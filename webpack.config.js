@@ -21,9 +21,9 @@ module.exports = {
         extensions: [ '.ts' ]
     },
     output: {
-        filename: 'tiny_date_picker.js',
+        filename: 'tiny-date-picker.js',
         path: path.resolve(__dirname, 'dist'),
         library: 'TinyDatePicker',
-        libraryTarget: "window"
+        libraryTarget: "var"
     }
 }

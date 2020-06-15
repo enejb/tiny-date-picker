@@ -8,9 +8,11 @@ A light-weight date picker with zero dependencies.
 - Mobile-friendly/responsive
 - Supports multiple languages
 
+
 ## Installation
 
     npm install --save tiny-date-picker
+
 
 ## Usage
 
@@ -30,9 +32,10 @@ TinyDatePicker('.some-class-or-id-or-whatever');
 - [TinyDatePicker documentation](./docs/tiny-date-picker.md)
 - [DateRangePicker documentation](./docs/date-range-picker.md)
 
+
 ## License MIT
 
-Copyright (c) 2015 Chris Davies
+Copyright (c) 2020 Verivox GmbH (rewrite in typescript; original code by "Chris Davies <ferociousturtle@gmail.com>")
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
