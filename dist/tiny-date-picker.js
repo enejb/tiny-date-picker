@@ -1,1210 +1,258 @@
-(function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-  typeof define === 'function' && define.amd ? define(factory) :
-  (global = global || self, global.TinyDatePicker = factory());
-}(this, (function () { 'use strict';
-
-  /**
-   * @file A generic set of mutation-free date functions.
-   */
-
-  /**
-   * now returns the current date without any time values
-   *
-   * @returns {Date}
-   */
-  function now() {
-    var dt = new Date();
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-  }
-
-  /**
-   * dateEq compares two dates
-   *
-   * @param {Date} date1 the first date
-   * @param {Date} date2 the second date
-   * @returns {boolean}
-   */
-  function datesEq(date1, date2) {
-    return (date1 && date1.toDateString()) === (date2 && date2.toDateString());
-  }
-
-  /**
-   * shiftDay shifts the specified date by n days
-   *
-   * @param {Date} dt
-   * @param {number} n
-   * @returns {Date}
-   */
-  function shiftDay(dt, n) {
-    dt = new Date(dt);
-    dt.setDate(dt.getDate() + n);
-    return dt;
-  }
-
-  /**
-   * shiftMonth shifts the specified date by a specified number of months
-   *
-   * @param {Date} dt
-   * @param {number} n
-   * @param {boolean} wrap optional, if true, does not change year
-   *                       value, defaults to false
-   * @returns {Date}
-   */
-  function shiftMonth(dt, n, wrap) {
-    dt = new Date(dt);
-
-    var dayOfMonth = dt.getDate();
-    var month = dt.getMonth() + n;
-
-    dt.setDate(1);
-    dt.setMonth(wrap ? (12 + month) % 12 : month);
-    dt.setDate(dayOfMonth);
-
-    // If dayOfMonth = 31, but the target month only has 30 or 29 or whatever...
-    // head back to the max of the target month
-    if (dt.getDate() < dayOfMonth) {
-      dt.setDate(0);
-    }
-
-    return dt;
-  }
-
-  /**
-   * shiftYear shifts the specified date by n years
-   *
-   * @param {Date} dt
-   * @param {number} n
-   * @returns {Date}
-   */
-  function shiftYear(dt, n) {
-    dt = new Date(dt);
-    dt.setFullYear(dt.getFullYear() + n);
-    return dt;
-  }
-
-  /**
-   * setYear changes the specified date to the specified year
-   *
-   * @param {Date} dt
-   * @param {number} year
-   */
-  function setYear(dt, year) {
-    dt = new Date(dt);
-    dt.setFullYear(year);
-    return dt;
-  }
-
-  /**
-   * setMonth changes the specified date to the specified month
-   *
-   * @param {Date} dt
-   * @param {number} month
-   */
-  function setMonth(dt, month) {
-    return shiftMonth(dt, month - dt.getMonth());
-  }
-
-  /**
-   * dateOrParse creates a function which, given a date or string, returns a date
-   *
-   * @param {function} parse the function used to parse strings
-   * @returns {function}
-   */
-  function dateOrParse(parse) {
-    return function (dt) {
-      return dropTime(typeof dt === 'string' ? parse(dt) : dt);
-    };
-  }
-
-  /**
-   * constrainDate returns dt or min/max depending on whether dt is out of bounds (inclusive)
-   *
-   * @export
-   * @param {Date} dt
-   * @param {Date} min
-   * @param {Date} max
-   * @returns {Date}
-   */
-  function constrainDate(dt, min, max) {
-    return (dt < min) ? min :
-           (dt > max) ? max :
-           dt;
-  }
-
-  function dropTime(dt) {
-    dt = new Date(dt);
-    dt.setHours(0, 0, 0, 0);
-    return dt;
-  }
-
-  /**
-   * @file Utility functions for function manipulation.
-   */
-
-  /**
-   * bufferFn buffers calls to fn so they only happen every ms milliseconds
-   *
-   * @param {number} ms number of milliseconds
-   * @param {function} fn the function to be buffered
-   * @returns {function}
-   */
-  function bufferFn(ms, fn) {
-    var timeout = undefined;
-    return function () {
-      clearTimeout(timeout);
-      timeout = setTimeout(fn, ms);
-    };
-  }
-
-  /**
-   * noop is a function which does nothing at all.
-   */
-  function noop() { }
-
-  /**
-   * copy properties from object o2 to object o1.
-   *
-   * @params {Object} o1
-   * @params {Object} o2
-   * @returns {Object}
-   */
-  function cp() {
-    var args = arguments;
-    var o1 = args[0];
-    for (var i = 1; i < args.length; ++i) {
-      var o2 = args[i] || {};
-      for (var key in o2) {
-        o1[key] = o2[key];
-      }
-    }
-    return o1;
-  }
-
-  /**
-   * @file Responsible for sanitizing and creating date picker options.
-   */
-
-  var english = {
-      days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      months: [
-          'January',
-          'February',
-          'March',
-          'April',
-          'May',
-          'June',
-          'July',
-          'August',
-          'September',
-          'October',
-          'November',
-          'December',
-      ],
-      today: 'Today',
-      clear: 'Clear',
-      close: 'Close',
-  };
-
-  /**
-   * DatePickerOptions constructs a new date picker options object, overriding
-   * default values with any values specified in opts.
-   *
-   * @param {DatePickerOptions} opts
-   * @returns {DatePickerOptions}
-   */
-  function DatePickerOptions(opts) {
-      opts = opts || {};
-      opts = cp(defaults(), opts);
-      var parse = dateOrParse(opts.parse);
-      opts.lang = cp(english, opts.lang);
-      opts.parse = parse;
-      opts.inRange = makeInRangeFn(opts);
-      opts.min = parse(opts.min || shiftYear(now(), -100));
-      opts.max = parse(opts.max || shiftYear(now(), 100));
-      opts.hilightedDate = opts.parse(opts.hilightedDate);
-      opts.alignment = opts.alignment || 'left';
-
-      return opts;
-  }
-
-  function defaults() {
-      return {
-          lang: english,
-
-          // Possible values: dp-modal, dp-below, dp-permanent
-          mode: 'dp-modal',
-
-          // The date to hilight initially if the date picker has no
-          // initial value.
-          hilightedDate: now(),
-
-          format: function (dt) {
-              return (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();
-          },
-
-          parse: function (str) {
-              var date = new Date(str);
-              return isNaN(date) ? now() : date;
-          },
-
-          dateClass: function () {
-          },
-
-          inRange: function () {
-              return true;
-          },
-
-          appendTo: document.body,
-          alignment: 'left'
-      };
-  }
-
-  function makeInRangeFn(opts) {
-      var inRange = opts.inRange; // Cache this version, and return a variant
-
-      return function (dt, dp) {
-          return inRange(dt, dp) && opts.min <= dt && opts.max >= dt;
-      };
-  }
-
-  /**
-   * @file Helper functions for dealing with dom elements.
-   */
-
-  var Key = {
-    left: 37,
-    up: 38,
-    right: 39,
-    down: 40,
-    enter: 13,
-    esc: 27,
-  };
-
-  /**
-   * on attaches an event handler to the specified element, and returns an
-   * off function which can be used to remove the handler.
-   *
-   * @param {string} evt the name of the event to handle
-   * @param {HTMLElement} el the element to attach to
-   * @param {function} handler the event handler
-   * @returns {function} the off function
-   */
-  function on(evt, el, handler) {
-    el.addEventListener(evt, handler, true);
-
-    return function () {
-      el.removeEventListener(evt, handler, true);
-    };
-  }
-
-  var CustomEvent = shimCustomEvent();
-
-  function shimCustomEvent() {
-    var CustomEvent = window.CustomEvent;
-
-    if (typeof CustomEvent !== 'function') {
-      CustomEvent = function (event, params) {
-        params = params || {bubbles: false, cancelable: false, detail: undefined};
-        var evt = document.createEvent('CustomEvent');
-        evt.initCustomEvent(event, params.bubbles, params.cancelable, params.detail);
-        return evt;
-      };
-
-      CustomEvent.prototype = window.Event.prototype;
-    }
-
-    return CustomEvent;
-  }
-
-  /**
-   * @file Manages the calendar / day-picker view.
-   */
-
-  var dayPicker = {
-    onKeyDown: keyDown,
-    onClick: {
-      'dp-day': selectDay,
-      'dp-next': gotoNextMonth,
-      'dp-prev': gotoPrevMonth,
-      'dp-today': selectToday,
-      'dp-clear': clear,
-      'dp-close': close,
-      'dp-cal-month': showMonthPicker,
-      'dp-cal-year': showYearPicker,
-    },
-    render: render
-  };
-
-  /**
-   * view renders the calendar (day picker) as an HTML string.
-   *
-   * @param {DatePickerContext} context the date picker being rendered
-   * @returns {string}
-   */
-  function render(dp) {
-    const opts = dp.opts;
-    const lang = opts.lang;
-    const state = dp.state;
-    const dayNames = lang.days;
-    const dayOffset = opts.dayOffset || 0;
-    const selectedDate = state.selectedDate;
-    const hilightedDate = state.hilightedDate;
-    const hilightedMonth = hilightedDate.getMonth();
-    const today = now().getTime();
-
-    return (
-      '<div class="dp-cal">' +
-        '<header class="dp-cal-header">' +
-          '<button tabindex="-1" type="button" class="dp-prev">Prev</button>' +
-          '<button tabindex="-1" type="button" class="dp-cal-month">' +
-            lang.months[hilightedMonth] +
-          '</button>' +
-          '<button tabindex="-1" type="button" class="dp-cal-year">' +
-            hilightedDate.getFullYear() +
-          '</button>' +
-          '<button tabindex="-1" type="button" class="dp-next">Next</button>' +
-        '</header>' +
-        '<div class="dp-days">' +
-          dayNames.map(function (name, i) {
-            return (
-              '<span class="dp-col-header">' + dayNames[(i + dayOffset) % dayNames.length] + '</span>'
-            );
-          }).join('') +
-          mapDays(hilightedDate, dayOffset, function (date) {
-            const isNotInMonth = date.getMonth() !== hilightedMonth;
-            const isDisabled = !opts.inRange(date);
-            const isToday = date.getTime() === today;
-            let className = 'dp-day';
-            className += (isNotInMonth ? ' dp-edge-day' : '');
-            className += (datesEq(date, hilightedDate) ? ' dp-current' : '');
-            className += (datesEq(date, selectedDate) ? ' dp-selected' : '');
-            className += (isDisabled ? ' dp-day-disabled' : '');
-            className += (isToday ? ' dp-day-today' : '');
-            className += ' ' + opts.dateClass(date, dp);
-
-            return (
-              '<button tabindex="-1" type="button" class="' + className + '" data-date="' + date.getTime() + '">' +
-                date.getDate() +
-              '</button>'
-            );
-          }) +
-        '</div>' +
-        '<footer class="dp-cal-footer">' +
-          '<button tabindex="-1" type="button" class="dp-today">' + lang.today + '</button>' +
-          '<button tabindex="-1" type="button" class="dp-clear">' + lang.clear + '</button>' +
-          '<button tabindex="-1" type="button" class="dp-close">' + lang.close + '</button>' +
-        '</footer>' +
-      '</div>'
-    );
-  }
-
-  /**
-   * keyDown handles the key down event for the day-picker
-   *
-   * @param {Event} e
-   * @param {DatePickerContext} dp
-   */
-  function keyDown(e, dp) {
-    const key = e.code || e.keyCode;
-    const shiftBy =
-      (key === Key.left) ? -1 :
-      (key === Key.right) ? 1 :
-      (key === Key.up) ? -7 :
-      (key === Key.down) ? 7 :
-      0;
-
-    if (key === Key.esc) {
-      dp.close();
-    } else if (shiftBy) {
-      e.preventDefault();
-      dp.setState({
-        hilightedDate: shiftDay(dp.state.hilightedDate, shiftBy)
-      });
-    }
-  }
-
-  function selectToday(e, dp) {
-    dp.setState({
-      selectedDate: now(),
-    });
-  }
-
-  function clear(e, dp) {
-    dp.setState({
-      selectedDate: null,
-    });
-  }
-
-  function close(e, dp) {
-    dp.close();
-  }
-
-  function showMonthPicker(e, dp) {
-    dp.setState({
-      view: 'month'
-    });
-  }
-
-  function showYearPicker(e, dp) {
-    dp.setState({
-      view: 'year'
-    });
-  }
-
-  function gotoNextMonth(e, dp) {
-    const hilightedDate = dp.state.hilightedDate;
-    dp.setState({
-      hilightedDate: shiftMonth(hilightedDate, 1)
-    });
-  }
-
-  function gotoPrevMonth(e, dp) {
-    const hilightedDate = dp.state.hilightedDate;
-    dp.setState({
-      hilightedDate: shiftMonth(hilightedDate, -1)
-    });
-  }
-
-  function selectDay(e, dp) {
-    dp.setState({
-      selectedDate: new Date(parseInt(e.target.getAttribute('data-date'))),
-    });
-  }
-
-  function mapDays(currentDate, dayOffset, fn) {
-    let result = '';
-    const iter = new Date(currentDate);
-    iter.setDate(1);
-    iter.setDate(1 - iter.getDay() + dayOffset);
-
-    // If we are showing monday as the 1st of the week,
-    // and the monday is the 2nd of the month, the sunday won't
-    // show, so we need to shift backwards
-    if (dayOffset && iter.getDate() === dayOffset + 1) {
-      iter.setDate(dayOffset - 6);
-    }
-
-    // We are going to have 6 weeks always displayed to keep a consistent
-    // calendar size
-    for (let day = 0; day < (6 * 7); ++day) {
-      result += fn(iter);
-      iter.setDate(iter.getDate() + 1);
-    }
-
-    return result;
-  }
-
-  /**
-   * @file Manages the month-picker view.
-   */
-
-  var monthPicker = {
-    onKeyDown: keyDown$1,
-    onClick: {
-      'dp-month': onChooseMonth
-    },
-    render: render$1
-  };
-
-  function onChooseMonth(e, dp) {
-    dp.setState({
-      hilightedDate: setMonth(dp.state.hilightedDate, parseInt(e.target.getAttribute('data-month'))),
-      view: 'day',
-    });
-  }
-
-  /**
-   * render renders the month picker as an HTML string
-   *
-   * @param {DatePickerContext} dp the date picker context
-   * @returns {string}
-   */
-  function render$1(dp) {
-    const opts = dp.opts;
-    const lang = opts.lang;
-    const months = lang.months;
-    const currentDate = dp.state.hilightedDate;
-    const currentMonth = currentDate.getMonth();
-
-    return (
-      '<div class="dp-months">' +
-        months.map(function (month, i) {
-          let className = 'dp-month';
-          className += (currentMonth === i ? ' dp-current' : '');
-
-          return (
-            '<button tabindex="-1" type="button" class="' + className + '" data-month="' + i + '">' +
-              month +
-            '</button>'
-          );
-        }).join('') +
-      '</div>'
-    );
-  }
-
-  /**
-   * keyDown handles keydown events that occur in the month picker
-   *
-   * @param {Event} e
-  * @param {DatePickerContext} dp
-   */
-  function keyDown$1(e, dp) {
-    const key =  e.code || e.keyCode;
-    const shiftBy =
-      (key === Key.left) ? -1 :
-      (key === Key.right) ? 1 :
-      (key === Key.up) ? -3 :
-      (key === Key.down) ? 3 :
-      0;
-
-    if (key === Key.esc) {
-      dp.setState({
-        view: 'day',
-      });
-    } else if (shiftBy) {
-      e.preventDefault();
-      dp.setState({
-        hilightedDate: shiftMonth(dp.state.hilightedDate, shiftBy, true)
-      });
-    }
-  }
-
-  /**
-   * @file Manages the year-picker view.
-   */
-
-  var yearPicker = {
-    render: render$2,
-    onKeyDown: keyDown$2,
-    onClick: {
-      'dp-year': onChooseYear
-    },
-  };
-
-  /**
-   * view renders the year picker as an HTML string.
-   *
-   * @param {DatePickerContext} dp the date picker context
-   * @returns {string}
-   */
-  function render$2(dp) {
-    const state = dp.state;
-    const currentYear = state.hilightedDate.getFullYear();
-    const selectedYear = state.selectedDate.getFullYear();
-
-    return (
-      '<div class="dp-years">' +
-        mapYears(dp, function (year) {
-          let className = 'dp-year';
-          className += (year === currentYear ? ' dp-current' : '');
-          className += (year === selectedYear ? ' dp-selected' : '');
-
-          return (
-            '<button tabindex="-1" type="button" class="' + className + '" data-year="' + year + '">' +
-              year +
-            '</button>'
-          );
-        }) +
-      '</div>'
-    );
-  }
-
-  function onChooseYear(e, dp) {
-    dp.setState({
-      hilightedDate: setYear(dp.state.hilightedDate, parseInt(e.target.getAttribute('data-year'))),
-      view: 'day',
-    });
-  }
-
-  function keyDown$2(e, dp) {
-    const key = e.code || e.keyCode;
-    const opts = dp.opts;
-    const shiftBy =
-      (key === Key.left || key === Key.up) ? 1 :
-      (key === Key.right || key === Key.down) ? -1 :
-      0;
-
-    if (key === Key.esc) {
-      dp.setState({
-        view: 'day',
-      });
-    } else if (shiftBy) {
-      e.preventDefault();
-      const shiftedYear = shiftYear(dp.state.hilightedDate, shiftBy);
-
-      dp.setState({
-        hilightedDate: constrainDate(shiftedYear, opts.min, opts.max),
-      });
-    }
-  }
-
-  function mapYears(dp, fn) {
-    let result = '';
-    const max = dp.opts.max.getFullYear();
-
-    for (let i = max; i >= dp.opts.min.getFullYear(); --i) {
-      result += fn(i);
-    }
-
-    return result;
-  }
-
-  /**
-   * @file Defines the base date picker behavior, overridden by constious modes.
-   */
-
-  const views = {
-      day: dayPicker,
-      year: yearPicker,
-      month: monthPicker,
-  };
-
-  function BaseMode(input, emit, opts) {
-      let detatchInputEvents; // A function that detaches all events from the input
-      let closing = false; // A hack to prevent calendar from re-opening when closing.
-      let selectedDate; // The currently selected date
-      const dp = {
-          // The root DOM element for the date picker, initialized on first open.
-          el: undefined,
-          opts: opts,
-          shouldFocusOnBlur: true,
-          shouldFocusOnRender: true,
-          state: initialState(),
-          adjustPosition: noop,
-          containerHTML: '<div class="dp"></div>',
-
-          attachToDom: function () {
-              opts.appendTo.appendChild(dp.el);
-          },
-
-          updateInput: function (selectedDate) {
-              const e = new CustomEvent('change', { bubbles: true });
-              e.simulated = true;
-              input.value = selectedDate ? opts.format(selectedDate) : '';
-              input.dispatchEvent(e);
-          },
-
-          computeSelectedDate: function () {
-              return opts.parse(input.value);
-          },
-
-          currentView: function () {
-              return views[dp.state.view];
-          },
-
-          open: function () {
-              if (closing) {
-                  return;
-              }
-
-              if (!dp.el) {
-                  dp.el = createContainerElement(opts, dp.containerHTML);
-                  attachContainerEvents(dp);
-              }
-
-              selectedDate = constrainDate(dp.computeSelectedDate(), opts.min, opts.max);
-              dp.state.hilightedDate = selectedDate || opts.hilightedDate;
-              dp.state.view = 'day';
-
-              dp.attachToDom();
-              dp.render();
-
-              emit('open');
-          },
-
-          isVisible: function () {
-              return !!dp.el && !!dp.el.parentNode;
-          },
-
-          hasFocus: function () {
-              const focused = document.activeElement;
-              return dp.el &&
-                  dp.el.contains(focused) &&
-                  focused.className.indexOf('dp-focuser') < 0;
-          },
-
-          shouldHide: function () {
-              return dp.isVisible();
-          },
-
-          close: function (becauseOfBlur) {
-              const el = dp.el;
-
-              if (!dp.isVisible()) {
-                  return;
-              }
-
-              if (el) {
-                  const parent = el.parentNode;
-                  parent && parent.removeChild(el);
-              }
-
-              closing = true;
-
-              if (becauseOfBlur && dp.shouldFocusOnBlur) {
-                  focusInput(input);
-              }
-
-              // When we close, the input often gains refocus, which
-              // can then launch the date picker again, so we buffer
-              // a bit and don't show the date picker within N ms of closing
-              setTimeout(function () {
-                  closing = false;
-              }, 100);
-
-              emit('close');
-          },
-
-          destroy: function () {
-              dp.close();
-              detatchInputEvents();
-          },
-
-          render: function () {
-              if (!dp.el) {
-                  return;
-              }
-
-              const hadFocus = dp.hasFocus();
-              const html = dp.currentView().render(dp);
-              html && (dp.el.firstChild.innerHTML = html);
-
-              dp.adjustPosition();
-
-              if (hadFocus || dp.shouldFocusOnRender) {
-                  focusCurrent(dp);
-              }
-          },
-
-          // Conceptually similar to setState in React, updates
-          // the view state and re-renders.
-          setState: function (state) {
-              for (const key in state) {
-                  dp.state[key] = state[key];
-              }
-
-              emit('statechange');
-              dp.render();
-          },
-      };
-
-      detatchInputEvents = attachInputEvents(input, dp);
-
-      // Builds the initial view state
-      // selectedDate is a special case and causes changes to hilightedDate
-      // hilightedDate is set on open, so remains undefined initially
-      // view is the current view (day, month, year)
-      function initialState() {
-          return {
-              get selectedDate() {
-                  return selectedDate;
-              },
-              set selectedDate(dt) {
-                  if (dt && !opts.inRange(dt)) {
-                      return;
-                  }
-
-                  if (dt) {
-                      selectedDate = new Date(dt);
-                      dp.state.hilightedDate = selectedDate;
-                  } else {
-                      selectedDate = dt;
-                  }
-
-                  dp.updateInput(selectedDate);
-                  emit('select');
-                  dp.close();
-              },
-              view: 'day',
-          };
-      }
-
-      return dp;
-  }
-
-  function createContainerElement(opts, containerHTML) {
-      const el = document.createElement('div');
-
-      el.className = opts.mode;
-      el.innerHTML = containerHTML;
-
-      return el;
-  }
-
-  function attachInputEvents(input, dp) {
-      const bufferShow = bufferFn(5, function () {
-          if (dp.shouldHide()) {
-              dp.close();
-          } else {
-              dp.open();
-          }
-      });
-
-      const off = [
-          on('blur', input, bufferFn(150, function () {
-              if (!dp.hasFocus()) {
-                  dp.close(true);
-              }
-          })),
-
-          on('mousedown', input, function () {
-              if (input === document.activeElement) {
-                  bufferShow();
-              }
-          }),
-
-          on('focus', input, bufferShow),
-
-          on('input', input, function (e) {
-              const date = dp.opts.parse(e.target.value);
-              isNaN(date) || dp.setState({
-                  hilightedDate: date,
-              });
-          }),
-      ];
-
-      // Unregister all events that were registered above.
-      return function () {
-          off.forEach(function (f) {
-              f();
-          });
-      };
-  }
-
-  function focusCurrent(dp) {
-      const current = dp.el.querySelector('.dp-current');
-      return current && current.focus();
-  }
-
-  function attachContainerEvents(dp) {
-      const el = dp.el;
-      const calEl = el.querySelector('.dp');
-
-      // Hack to get iOS to show active CSS states
-      el.ontouchstart = noop;
-
-      function onClick(e) {
-          e.target.className.split(' ').forEach(function (evt) {
-              const handler = dp.currentView().onClick[evt];
-              handler && handler(e, dp);
-          });
-      }
-
-      // The calender fires a blur event *every* time we redraw
-      // this means we need to buffer the blur event to see if
-      // it still has no focus after redrawing, and only then
-      // do we return focus to the input. A possible other approach
-      // would be to set context.redrawing = true on redraw and
-      // set it to false in the blur event.
-      on('blur', calEl, bufferFn(150, function () {
-          if (!dp.hasFocus()) {
-              dp.close(true);
-          }
-      }));
-
-      on('keydown', el, function (e) {
-          const code = e.code || e.keyCode;
-          if (code === Key.enter) {
-              onClick(e);
-          } else {
-              dp.currentView().onKeyDown(e, dp);
-          }
-      });
-
-      // If the user clicks in non-focusable space, but
-      // still within the date picker, we don't want to
-      // hide, so we need to hack some things...
-      on('mousedown', calEl, function (e) {
-          e.target.focus && e.target.focus(); // IE hack
-          if (document.activeElement !== e.target) {
-              e.preventDefault();
-              focusCurrent(dp);
-          }
-      });
-
-      on('click', el, onClick);
-  }
-
-  function focusInput(input) {
-      // When the modal closes, we need to focus the original input so the
-      // user can continue tabbing from where they left off.
-      input.focus();
-
-      // iOS zonks out if we don't blur the input, so...
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-          input.blur();
-      }
-  }
-
-  /**
-   * @file Defines the modal date picker behavior.
-   */
-
-  function ModalMode(input, emit, opts) {
-      const dp = BaseMode(input, emit, opts);
-
-      // In modal mode, users really shouldn't be able to type in
-      // the input, as all input is done via the calendar.
-      input.readonly = true;
-
-      // In modal mode, we need to know when the user has tabbed
-      // off the end of the calendar, and set focus to the original
-      // input. To do this, we add a special element to the DOM.
-      // When the user tabs off the bottom of the calendar, they
-      // will tab onto this element.
-      dp.containerHTML += '<a href="#" class="dp-focuser">.</a>';
-
-      return dp;
-  }
-
-  /**
-   * @file Defines the dropdown date picker behavior.
-   */
-
-  function DropdownMode(input, emit, opts) {
-      const dp = BaseMode(input, emit, opts);
-
-      dp.shouldFocusOnBlur = false;
-
-      Object.defineProperty(dp, 'shouldFocusOnRender', {
-          get: function () {
-              return input !== document.activeElement;
-          },
-      });
-
-      dp.adjustPosition = function () {
-          autoPosition(input, dp, opts.alignment);
-      };
-
-      return dp;
-  }
-
-  function autoPosition(input, dp, alignment) {
-      const inputPos = input.getBoundingClientRect();
-      const win = window;
-
-      adjustCalY(dp, inputPos, win);
-      adjustCalX(dp, inputPos, win, alignment);
-
-      dp.el.style.visibility = '';
-  }
-
-  function adjustCalX(dp, inputPos, win, alignment) {
-      const cal = dp.el;
-      const scrollLeft = win.pageXOffset;
-      const inputLeft = inputPos.left + scrollLeft;
-      const maxRight = win.innerWidth + scrollLeft;
-      const offsetWidth = cal.offsetWidth;
-      const calRight = inputLeft + offsetWidth;
-      const shiftedLeft = maxRight - offsetWidth;
-      const left = calRight > maxRight && shiftedLeft > 0 ? shiftedLeft : inputLeft;
-
-      if (alignment === 'right') {
-          cal.style.left = left + (inputPos.width - offsetWidth) + 'px';
-      } else {
-          cal.style.left = left + 'px';
-      }
-  }
-
-  function adjustCalY(dp, inputPos, win) {
-      const cal = dp.el;
-      const scrollTop = win.pageYOffset;
-      const inputTop = scrollTop + inputPos.top;
-      const calHeight = cal.offsetHeight;
-      const belowTop = inputTop + inputPos.height + 8;
-      const aboveTop = inputTop - calHeight - 8;
-      const isAbove = (aboveTop > 0 && belowTop + calHeight > scrollTop + win.innerHeight);
-      const top = isAbove ? aboveTop : belowTop;
-
-      if (cal.classList) {
-          cal.classList.toggle('dp-is-above', isAbove);
-          cal.classList.toggle('dp-is-below', !isAbove);
-      }
-      cal.style.top = top + 'px';
-  }
-
-  /**
-   * @file Defines the permanent date picker behavior.
-   */
-
-  function PermanentMode(root, emit, opts) {
-      const dp = BaseMode(root, emit, opts);
-
-      dp.close = noop;
-      dp.updateInput = noop;
-      dp.shouldFocusOnRender = opts.shouldFocusOnRender;
-
-      dp.computeSelectedDate = function () {
-          return opts.hilightedDate;
-      };
-
-      dp.attachToDom = function () {
-          root.appendChild(dp.el);
-      };
-
-      dp.open();
-
-      return dp;
-  }
-
-  /**
-   * @file Defines the various date picker modes (modal, dropdown, permanent)
-   */
-
-  function Mode(input, emit, opts) {
-      input = input && input.tagName ? input : document.querySelector(input);
-
-      if (opts.mode === 'dp-modal') {
-          return ModalMode(input, emit, opts);
-      }
-
-      if (opts.mode === 'dp-below') {
-          return DropdownMode(input, emit, opts);
-      }
-
-      if (opts.mode === 'dp-permanent') {
-          return PermanentMode(input, emit, opts);
-      }
-  }
-
-  /**
-   * @file Defines simple event emitter behavior.
-   */
-
-  /**
-   * Emitter constructs a new emitter object which has on/off methods.
-   *
-   * @returns {EventEmitter}
-   */
-  function Emitter() {
-    var handlers = {};
-
-    function onOne(name, handler) {
-      (handlers[name] = (handlers[name] || [])).push(handler);
-    }
-
-    function onMany(fns) {
-      for (var name in fns) {
-        onOne(name, fns[name]);
-      }
-    }
-
-    return {
-      on: function (name, handler) {
-        if (handler) {
-          onOne(name, handler);
-        } else {
-          onMany(name);
-        }
-
-        return this;
-      },
-
-      emit: function (name, arg) {
-        (handlers[name] || []).forEach(function (handler) {
-          handler(name, arg);
-        });
-      },
-
-      off: function (name, handler) {
-        if (!name) {
-          handlers = {};
-        } else if (!handler) {
-          handlers[name] = [];
-        } else {
-          handlers[name] = (handlers[name] || []).filter(function (h) {
-            return h !== handler;
-          });
-        }
-
-        return this;
-      }
-    };
-  }
-
-  /**
-   * @file The root date picker file, defines public exports for the library.
-   */
-
-  /**
-  * The date picker language configuration
-  * @typedef {Object} LangOptions
-  * @property {Array.<string>} [days] - Days of the week
-  * @property {Array.<string>} [months] - Months of the year
-  * @property {string} today - The label for the 'today' button
-  * @property {string} close - The label for the 'close' button
-  * @property {string} clear - The label for the 'clear' button
-  */
-
-  /**
-  * The configuration options for a date picker.
-  *
-  * @typedef {Object} DatePickerOptions
-  * @property {LangOptions} [lang] - Configures the label text, defaults to English
-  * @property {('dp-modal'|'dp-below'|'dp-permanent')} [mode] - The date picker mode, defaults to 'dp-modal'
-  * @property {(string|Date)} [hilightedDate] - The date to hilight if no date is selected
-  * @property {function(string|Date):Date} [parse] - Parses a date, the complement of the "format" function
-  * @property {function(Date):string} [format] - Formats a date for displaying to user
-  * @property {function(Date):string} [dateClass] - Associates a custom CSS class with a date
-  * @property {function(Date):boolean} [inRange] - Indicates whether or not a date is selectable
-  * @property {(string|Date)} [min] - The minimum selectable date (inclusive, default 100 years ago)
-  * @property {(string|Date)} [max] - The maximum selectable date (inclusive, default 100 years from now)
-  */
-
-  /**
-  * The state values for the date picker
-  *
-  * @typedef {Object} DatePickerState
-  * @property {string} view - The current view 'day' | 'month' | 'year'
-  * @property {Date} selectedDate - The date which has been selected by the user
-  * @property {Date} hilightedDate - The date which is currently hilighted / active
-  */
-
-  /**
-  * An instance of TinyDatePicker
-  *
-  * @typedef {Object} DatePicker
-  * @property {DatePickerState} state - The values currently displayed.
-  * @property {function} on - Adds an event handler
-  * @property {function} off - Removes an event handler
-  * @property {function} setState - Changes the current state of the date picker
-  * @property {function} open - Opens the date picker
-  * @property {function} close - Closes the date picker
-  * @property {function} destroy - Destroys the date picker (removing all handlers from the input, too)
-  */
-
-  /**
-   * TinyDatePicker constructs a new date picker for the specified input
-   *
-   * @param {HTMLElement | string} input The input or CSS selector associated with the datepicker
-   * @param {DatePickerOptions} opts The options for initializing the date picker
-   * @returns {DatePicker}
-   */
-  function TinyDatePicker(input, opts) {
-    const emitter = Emitter();
-    const options = DatePickerOptions(opts);
-    const mode = Mode(input, emit, options);
-    var me = {
-      get state() {
-        return mode.state;
-      },
-      on: emitter.on,
-      off: emitter.off,
-      setState: mode.setState,
-      open: mode.open,
-      close: mode.close,
-      destroy: mode.destroy,
-    };
-
-    function emit(evt) {
-      emitter.emit(evt, me);
-    }
-
-    return me;
-  }
-
-  return TinyDatePicker;
-
-})));
+var TinyDatePicker =
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/date-picker.ts");
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "./src/date-picker-options.ts":
+/*!************************************!*\
+  !*** ./src/date-picker-options.ts ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Responsible for sanitizing and creating date picker options.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.DatePickerOptions = void 0;\nconst date_manip_1 = __webpack_require__(/*! ./lib/date-manip */ \"./src/lib/date-manip.ts\");\nconst fns_1 = __webpack_require__(/*! ./lib/fns */ \"./src/lib/fns.ts\");\nvar english = {\n    days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],\n    months: [\n        'January',\n        'February',\n        'March',\n        'April',\n        'May',\n        'June',\n        'July',\n        'August',\n        'September',\n        'October',\n        'November',\n        'December',\n    ],\n    today: 'Today',\n    clear: 'Clear',\n    close: 'Close',\n};\n/**\n * DatePickerOptions constructs a new date picker options object, overriding\n * default values with any values specified in opts.\n *\n * @param {DatePickerOptions} opts\n * @returns {DatePickerOptions}\n */\nfunction DatePickerOptions(opts) {\n    opts = opts || {};\n    opts = fns_1.cp(defaults(), opts);\n    var parse = date_manip_1.dateOrParse(opts.parse);\n    opts.lang = fns_1.cp(english, opts.lang);\n    opts.parse = parse;\n    opts.inRange = makeInRangeFn(opts);\n    opts.min = parse(opts.min || date_manip_1.shiftYear(date_manip_1.now(), -100));\n    opts.max = parse(opts.max || date_manip_1.shiftYear(date_manip_1.now(), 100));\n    opts.hilightedDate = opts.parse(opts.hilightedDate);\n    opts.alignment = opts.alignment || 'left';\n    return opts;\n}\nexports.DatePickerOptions = DatePickerOptions;\nfunction defaults() {\n    return {\n        lang: english,\n        // Possible values: dp-modal, dp-below, dp-permanent\n        mode: 'dp-modal',\n        // The date to hilight initially if the date picker has no\n        // initial value.\n        hilightedDate: date_manip_1.now(),\n        format: function (dt) {\n            return (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();\n        },\n        parse: function (candidate) {\n            var date = new Date(candidate);\n            return isNaN(date.valueOf()) ? date_manip_1.now() : date;\n        },\n        dateClass: function (date) {\n            return '';\n        },\n        inRange: function () {\n            return true;\n        },\n        appendTo: document.body,\n        alignment: 'left'\n    };\n}\nfunction makeInRangeFn(opts) {\n    var inRange = opts.inRange; // Cache this version, and return a variant\n    return function (dt, dp) {\n        const earlierThanMin = opts.min ? opts.min <= dt : true;\n        const laterThanMax = opts.max ? opts.max >= dt : true;\n        return inRange(dt, dp) && earlierThanMin && laterThanMax;\n    };\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvZGF0ZS1waWNrZXItb3B0aW9ucy50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL2RhdGUtcGlja2VyLW9wdGlvbnMudHM/ZDM3OCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIFJlc3BvbnNpYmxlIGZvciBzYW5pdGl6aW5nIGFuZCBjcmVhdGluZyBkYXRlIHBpY2tlciBvcHRpb25zLlxuICovXG5cbmltcG9ydCB7IElEYXRlUGlja2VyT3B0aW9ucyB9IGZyb20gJy4vaW50ZXJmYWNlcydcbmltcG9ydCB7IG5vdywgc2hpZnRZZWFyLCBkYXRlT3JQYXJzZSB9IGZyb20gJy4vbGliL2RhdGUtbWFuaXAnO1xuaW1wb3J0IHsgY3AgfSBmcm9tICcuL2xpYi9mbnMnO1xuXG52YXIgZW5nbGlzaCA9IHtcbiAgICBkYXlzOiBbJ1N1bicsICdNb24nLCAnVHVlJywgJ1dlZCcsICdUaHUnLCAnRnJpJywgJ1NhdCddLFxuICAgIG1vbnRoczogW1xuICAgICAgICAnSmFudWFyeScsXG4gICAgICAgICdGZWJydWFyeScsXG4gICAgICAgICdNYXJjaCcsXG4gICAgICAgICdBcHJpbCcsXG4gICAgICAgICdNYXknLFxuICAgICAgICAnSnVuZScsXG4gICAgICAgICdKdWx5JyxcbiAgICAgICAgJ0F1Z3VzdCcsXG4gICAgICAgICdTZXB0ZW1iZXInLFxuICAgICAgICAnT2N0b2JlcicsXG4gICAgICAgICdOb3ZlbWJlcicsXG4gICAgICAgICdEZWNlbWJlcicsXG4gICAgXSxcbiAgICB0b2RheTogJ1RvZGF5JyxcbiAgICBjbGVhcjogJ0NsZWFyJyxcbiAgICBjbG9zZTogJ0Nsb3NlJyxcbn07XG5cbi8qKlxuICogRGF0ZVBpY2tlck9wdGlvbnMgY29uc3RydWN0cyBhIG5ldyBkYXRlIHBpY2tlciBvcHRpb25zIG9iamVjdCwgb3ZlcnJpZGluZ1xuICogZGVmYXVsdCB2YWx1ZXMgd2l0aCBhbnkgdmFsdWVzIHNwZWNpZmllZCBpbiBvcHRzLlxuICpcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlck9wdGlvbnN9IG9wdHNcbiAqIEByZXR1cm5zIHtEYXRlUGlja2VyT3B0aW9uc31cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIERhdGVQaWNrZXJPcHRpb25zKG9wdHM6IElEYXRlUGlja2VyT3B0aW9ucykge1xuICAgIG9wdHMgPSBvcHRzIHx8IHt9O1xuICAgIG9wdHMgPSBjcChkZWZhdWx0cygpLCBvcHRzKTtcbiAgICB2YXIgcGFyc2UgPSBkYXRlT3JQYXJzZShvcHRzLnBhcnNlKTtcbiAgICBvcHRzLmxhbmcgPSBjcChlbmdsaXNoLCBvcHRzLmxhbmcpO1xuICAgIG9wdHMucGFyc2UgPSBwYXJzZTtcbiAgICBvcHRzLmluUmFuZ2UgPSBtYWtlSW5SYW5nZUZuKG9wdHMpO1xuICAgIG9wdHMubWluID0gcGFyc2Uob3B0cy5taW4gfHwgc2hpZnRZZWFyKG5vdygpLCAtMTAwKSk7XG4gICAgb3B0cy5tYXggPSBwYXJzZShvcHRzLm1heCB8fCBzaGlmdFllYXIobm93KCksIDEwMCkpO1xuICAgIG9wdHMuaGlsaWdodGVkRGF0ZSA9IG9wdHMucGFyc2Uob3B0cy5oaWxpZ2h0ZWREYXRlKTtcbiAgICBvcHRzLmFsaWdubWVudCA9IG9wdHMuYWxpZ25tZW50IHx8ICdsZWZ0J1xuXG4gICAgcmV0dXJuIG9wdHM7XG59XG5cbmZ1bmN0aW9uIGRlZmF1bHRzKCk6IGFueSB7XG4gICAgcmV0dXJuIHtcbiAgICAgICAgbGFuZzogZW5nbGlzaCxcblxuICAgICAgICAvLyBQb3NzaWJsZSB2YWx1ZXM6IGRwLW1vZGFsLCBkcC1iZWxvdywgZHAtcGVybWFuZW50XG4gICAgICAgIG1vZGU6ICdkcC1tb2RhbCcsXG5cbiAgICAgICAgLy8gVGhlIGRhdGUgdG8gaGlsaWdodCBpbml0aWFsbHkgaWYgdGhlIGRhdGUgcGlja2VyIGhhcyBub1xuICAgICAgICAvLyBpbml0aWFsIHZhbHVlLlxuICAgICAgICBoaWxpZ2h0ZWREYXRlOiBub3coKSxcblxuICAgICAgICBmb3JtYXQ6IGZ1bmN0aW9uIChkdDogRGF0ZSkge1xuICAgICAgICAgICAgcmV0dXJuIChkdC5nZXRNb250aCgpICsgMSkgKyAnLycgKyBkdC5nZXREYXRlKCkgKyAnLycgKyBkdC5nZXRGdWxsWWVhcigpO1xuICAgICAgICB9LFxuXG4gICAgICAgIHBhcnNlOiBmdW5jdGlvbiAoY2FuZGlkYXRlOiBEYXRlIHwgc3RyaW5nKTogRGF0ZSB7XG4gICAgICAgICAgICB2YXIgZGF0ZSA9IG5ldyBEYXRlKGNhbmRpZGF0ZSk7XG4gICAgICAgICAgICByZXR1cm4gaXNOYU4oZGF0ZS52YWx1ZU9mKCkpID8gbm93KCkgOiBkYXRlO1xuICAgICAgICB9LFxuXG4gICAgICAgIGRhdGVDbGFzczogZnVuY3Rpb24gKGRhdGU6IERhdGUpIHtcbiAgICAgICAgICAgIHJldHVybiAnJ1xuICAgICAgICB9LFxuXG4gICAgICAgIGluUmFuZ2U6IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIHJldHVybiB0cnVlO1xuICAgICAgICB9LFxuXG4gICAgICAgIGFwcGVuZFRvOiBkb2N1bWVudC5ib2R5LFxuICAgICAgICBhbGlnbm1lbnQ6ICdsZWZ0J1xuICAgIH07XG59XG5cbmZ1bmN0aW9uIG1ha2VJblJhbmdlRm4ob3B0czogSURhdGVQaWNrZXJPcHRpb25zKSB7XG4gICAgdmFyIGluUmFuZ2UgPSBvcHRzLmluUmFuZ2U7IC8vIENhY2hlIHRoaXMgdmVyc2lvbiwgYW5kIHJldHVybiBhIHZhcmlhbnRcblxuICAgIHJldHVybiBmdW5jdGlvbiAoZHQ6IERhdGUsIGRwOiBhbnkpIHtcbiAgICAgICAgY29uc3QgZWFybGllclRoYW5NaW4gPSBvcHRzLm1pbiA/IG9wdHMubWluIDw9IGR0IDogdHJ1ZVxuICAgICAgICBjb25zdCBsYXRlclRoYW5NYXggPSBvcHRzLm1heCA/IG9wdHMubWF4ID49IGR0OiB0cnVlXG4gICAgICAgIHJldHVybiBpblJhbmdlKGR0LCBkcCkgJiYgZWFybGllclRoYW5NaW4gJiYgbGF0ZXJUaGFuTWF4O1xuICAgIH07XG59XG4iXSwibWFwcGluZ3MiOiI7QUFBQTs7QUFFQTs7O0FBR0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTs7Ozs7O0FBTUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQWJBO0FBZUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOyIsInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/date-picker-options.ts\n");
+
+/***/ }),
+
+/***/ "./src/date-picker.ts":
+/*!****************************!*\
+  !*** ./src/date-picker.ts ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file The root date picker file, defines public exports for the library.\n */\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.TinyDatePicker = void 0;\nconst date_picker_options_1 = __webpack_require__(/*! ./date-picker-options */ \"./src/date-picker-options.ts\");\nconst index_1 = __importDefault(__webpack_require__(/*! ./mode/index */ \"./src/mode/index.ts\"));\nconst emitter_1 = __importDefault(__webpack_require__(/*! ./lib/emitter */ \"./src/lib/emitter.ts\"));\n/**\n * TinyDatePicker constructs a new date picker for the specified input\n *\n * @param {HTMLElement | string} input The input or CSS selector associated with the datepicker\n * @param {DatePickerOptions} opts The options for initializing the date picker\n * @returns {DatePicker}\n */\nfunction TinyDatePicker(input, opts) {\n    const emitter = emitter_1.default();\n    const options = date_picker_options_1.DatePickerOptions(opts);\n    const mode = index_1.default(input, emit, options);\n    var me = {\n        get state() {\n            return mode.state;\n        },\n        on: emitter.on,\n        off: emitter.off,\n        setState: mode.setState,\n        open: mode.open,\n        close: mode.close,\n        destroy: mode.destroy,\n    };\n    function emit(evt) {\n        emitter.emit(evt, me);\n    }\n    return me;\n}\nexports.TinyDatePicker = TinyDatePicker;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvZGF0ZS1waWNrZXIudHMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9UaW55RGF0ZVBpY2tlci8uL3NyYy9kYXRlLXBpY2tlci50cz82MjY0Il0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGZpbGUgVGhlIHJvb3QgZGF0ZSBwaWNrZXIgZmlsZSwgZGVmaW5lcyBwdWJsaWMgZXhwb3J0cyBmb3IgdGhlIGxpYnJhcnkuXG4gKi9cblxuaW1wb3J0IHsgRGF0ZVBpY2tlck9wdGlvbnMgfSBmcm9tICcuL2RhdGUtcGlja2VyLW9wdGlvbnMnO1xuaW1wb3J0IHsgSURhdGVQaWNrZXJPcHRpb25zIH0gZnJvbSAnLi9pbnRlcmZhY2VzJztcbmltcG9ydCBNb2RlIGZyb20gJy4vbW9kZS9pbmRleCc7XG5pbXBvcnQgRW1pdHRlciBmcm9tICcuL2xpYi9lbWl0dGVyJztcblxuLyoqXG4gKiBUaW55RGF0ZVBpY2tlciBjb25zdHJ1Y3RzIGEgbmV3IGRhdGUgcGlja2VyIGZvciB0aGUgc3BlY2lmaWVkIGlucHV0XG4gKlxuICogQHBhcmFtIHtIVE1MRWxlbWVudCB8IHN0cmluZ30gaW5wdXQgVGhlIGlucHV0IG9yIENTUyBzZWxlY3RvciBhc3NvY2lhdGVkIHdpdGggdGhlIGRhdGVwaWNrZXJcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlck9wdGlvbnN9IG9wdHMgVGhlIG9wdGlvbnMgZm9yIGluaXRpYWxpemluZyB0aGUgZGF0ZSBwaWNrZXJcbiAqIEByZXR1cm5zIHtEYXRlUGlja2VyfVxuICovXG5leHBvcnQgZnVuY3Rpb24gVGlueURhdGVQaWNrZXIoaW5wdXQ6IEhUTUxJbnB1dEVsZW1lbnQgfCBzdHJpbmcsIG9wdHM6IElEYXRlUGlja2VyT3B0aW9ucykge1xuICBjb25zdCBlbWl0dGVyID0gRW1pdHRlcigpO1xuICBjb25zdCBvcHRpb25zID0gRGF0ZVBpY2tlck9wdGlvbnMob3B0cyk7XG4gIGNvbnN0IG1vZGUgPSBNb2RlKGlucHV0LCBlbWl0LCBvcHRpb25zKTtcbiAgdmFyIG1lID0ge1xuICAgIGdldCBzdGF0ZSgpIHtcbiAgICAgIHJldHVybiBtb2RlLnN0YXRlO1xuICAgIH0sXG4gICAgb246IGVtaXR0ZXIub24sXG4gICAgb2ZmOiBlbWl0dGVyLm9mZixcbiAgICBzZXRTdGF0ZTogbW9kZS5zZXRTdGF0ZSxcbiAgICBvcGVuOiBtb2RlLm9wZW4sXG4gICAgY2xvc2U6IG1vZGUuY2xvc2UsXG4gICAgZGVzdHJveTogbW9kZS5kZXN0cm95LFxuICB9O1xuXG4gIGZ1bmN0aW9uIGVtaXQoZXZ0OiBzdHJpbmcpIHtcbiAgICBlbWl0dGVyLmVtaXQoZXZ0LCBtZSk7XG4gIH1cblxuICByZXR1cm4gbWU7XG59XG4iXSwibWFwcGluZ3MiOiI7QUFBQTs7QUFFQTs7Ozs7O0FBRUE7QUFFQTtBQUNBO0FBRUE7Ozs7OztBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQXJCQTsiLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/date-picker.ts\n");
+
+/***/ }),
+
+/***/ "./src/lib/date-manip.ts":
+/*!*******************************!*\
+  !*** ./src/lib/date-manip.ts ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file A generic set of mutation-free date functions.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.constrainDate = exports.dateOrParse = exports.setMonth = exports.setYear = exports.shiftYear = exports.shiftMonth = exports.shiftDay = exports.datesEq = exports.now = void 0;\n/**\n * now returns the current date without any time values\n *\n * @returns {Date}\n */\nfunction now() {\n    var dt = new Date();\n    dt.setHours(0, 0, 0, 0);\n    return dt;\n}\nexports.now = now;\n/**\n * dateEq compares two dates\n *\n * @param {Date} date1 the first date\n * @param {Date} date2 the second date\n * @returns {boolean}\n */\nfunction datesEq(date1, date2) {\n    return (date1 && date1.toDateString()) === (date2 && date2.toDateString());\n}\nexports.datesEq = datesEq;\n/**\n * shiftDay shifts the specified date by n days\n *\n * @param {Date} dt\n * @param {number} n\n * @returns {Date}\n */\nfunction shiftDay(dt, n) {\n    dt = new Date(dt);\n    dt.setDate(dt.getDate() + n);\n    return dt;\n}\nexports.shiftDay = shiftDay;\n/**\n * shiftMonth shifts the specified date by a specified number of months\n *\n * @param {Date} dt\n * @param {number} n\n * @param {boolean} wrap optional, if true, does not change year\n *                       value, defaults to false\n * @returns {Date}\n */\nfunction shiftMonth(dt, n, wrap = false) {\n    dt = new Date(dt);\n    var dayOfMonth = dt.getDate();\n    var month = dt.getMonth() + n;\n    dt.setDate(1);\n    dt.setMonth(wrap ? (12 + month) % 12 : month);\n    dt.setDate(dayOfMonth);\n    // If dayOfMonth = 31, but the target month only has 30 or 29 or whatever...\n    // head back to the max of the target month\n    if (dt.getDate() < dayOfMonth) {\n        dt.setDate(0);\n    }\n    return dt;\n}\nexports.shiftMonth = shiftMonth;\n/**\n * shiftYear shifts the specified date by n years\n *\n * @param {Date} dt\n * @param {number} n\n * @returns {Date}\n */\nfunction shiftYear(dt, n) {\n    dt = new Date(dt);\n    dt.setFullYear(dt.getFullYear() + n);\n    return dt;\n}\nexports.shiftYear = shiftYear;\n/**\n * setYear changes the specified date to the specified year\n *\n * @param {Date} dt\n * @param {number} year\n */\nfunction setYear(dt, year) {\n    dt = new Date(dt);\n    dt.setFullYear(year);\n    return dt;\n}\nexports.setYear = setYear;\n/**\n * setMonth changes the specified date to the specified month\n *\n * @param {Date} dt\n * @param {number} month\n */\nfunction setMonth(dt, month) {\n    return shiftMonth(dt, month - dt.getMonth());\n}\nexports.setMonth = setMonth;\n/**\n * dateOrParse creates a function which, given a date or string, returns a date\n *\n * @param {function} parse the function used to parse strings\n * @returns {function}\n */\nfunction dateOrParse(parse) {\n    return function (dt) {\n        return dropTime(typeof dt === 'string' ? parse(dt) : dt);\n    };\n}\nexports.dateOrParse = dateOrParse;\n/**\n * constrainDate returns dt or min/max depending on whether dt is out of bounds (inclusive)\n *\n * @export\n * @param {Date} dt\n * @param {Date} min\n * @param {Date} max\n * @returns {Date}\n */\nfunction constrainDate(dt, min, max) {\n    return (dt < min) ? min :\n        (dt > max) ? max :\n            dt;\n}\nexports.constrainDate = constrainDate;\nfunction dropTime(dt) {\n    dt = new Date(dt);\n    dt.setHours(0, 0, 0, 0);\n    return dt;\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbGliL2RhdGUtbWFuaXAudHMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9UaW55RGF0ZVBpY2tlci8uL3NyYy9saWIvZGF0ZS1tYW5pcC50cz84Y2Y5Il0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGZpbGUgQSBnZW5lcmljIHNldCBvZiBtdXRhdGlvbi1mcmVlIGRhdGUgZnVuY3Rpb25zLlxuICovXG5cbi8qKlxuICogbm93IHJldHVybnMgdGhlIGN1cnJlbnQgZGF0ZSB3aXRob3V0IGFueSB0aW1lIHZhbHVlc1xuICpcbiAqIEByZXR1cm5zIHtEYXRlfVxuICovXG5leHBvcnQgZnVuY3Rpb24gbm93KCkge1xuICB2YXIgZHQgPSBuZXcgRGF0ZSgpO1xuICBkdC5zZXRIb3VycygwLCAwLCAwLCAwKTtcbiAgcmV0dXJuIGR0O1xufVxuXG4vKipcbiAqIGRhdGVFcSBjb21wYXJlcyB0d28gZGF0ZXNcbiAqXG4gKiBAcGFyYW0ge0RhdGV9IGRhdGUxIHRoZSBmaXJzdCBkYXRlXG4gKiBAcGFyYW0ge0RhdGV9IGRhdGUyIHRoZSBzZWNvbmQgZGF0ZVxuICogQHJldHVybnMge2Jvb2xlYW59XG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkYXRlc0VxKGRhdGUxPzogRGF0ZSwgZGF0ZTI/OiBEYXRlKSB7XG4gIHJldHVybiAoZGF0ZTEgJiYgZGF0ZTEudG9EYXRlU3RyaW5nKCkpID09PSAoZGF0ZTIgJiYgZGF0ZTIudG9EYXRlU3RyaW5nKCkpO1xufVxuXG4vKipcbiAqIHNoaWZ0RGF5IHNoaWZ0cyB0aGUgc3BlY2lmaWVkIGRhdGUgYnkgbiBkYXlzXG4gKlxuICogQHBhcmFtIHtEYXRlfSBkdFxuICogQHBhcmFtIHtudW1iZXJ9IG5cbiAqIEByZXR1cm5zIHtEYXRlfVxuICovXG5leHBvcnQgZnVuY3Rpb24gc2hpZnREYXkoZHQ6IERhdGUsIG46IG51bWJlcikge1xuICBkdCA9IG5ldyBEYXRlKGR0KTtcbiAgZHQuc2V0RGF0ZShkdC5nZXREYXRlKCkgKyBuKTtcbiAgcmV0dXJuIGR0O1xufVxuXG4vKipcbiAqIHNoaWZ0TW9udGggc2hpZnRzIHRoZSBzcGVjaWZpZWQgZGF0ZSBieSBhIHNwZWNpZmllZCBudW1iZXIgb2YgbW9udGhzXG4gKlxuICogQHBhcmFtIHtEYXRlfSBkdFxuICogQHBhcmFtIHtudW1iZXJ9IG5cbiAqIEBwYXJhbSB7Ym9vbGVhbn0gd3JhcCBvcHRpb25hbCwgaWYgdHJ1ZSwgZG9lcyBub3QgY2hhbmdlIHllYXJcbiAqICAgICAgICAgICAgICAgICAgICAgICB2YWx1ZSwgZGVmYXVsdHMgdG8gZmFsc2VcbiAqIEByZXR1cm5zIHtEYXRlfVxuICovXG5leHBvcnQgZnVuY3Rpb24gc2hpZnRNb250aChkdDogRGF0ZSwgbjogbnVtYmVyLCB3cmFwOiBib29sZWFuID0gZmFsc2UpIHtcbiAgZHQgPSBuZXcgRGF0ZShkdCk7XG5cbiAgdmFyIGRheU9mTW9udGggPSBkdC5nZXREYXRlKCk7XG4gIHZhciBtb250aCA9IGR0LmdldE1vbnRoKCkgKyBuO1xuXG4gIGR0LnNldERhdGUoMSk7XG4gIGR0LnNldE1vbnRoKHdyYXAgPyAoMTIgKyBtb250aCkgJSAxMiA6IG1vbnRoKTtcbiAgZHQuc2V0RGF0ZShkYXlPZk1vbnRoKTtcblxuICAvLyBJZiBkYXlPZk1vbnRoID0gMzEsIGJ1dCB0aGUgdGFyZ2V0IG1vbnRoIG9ubHkgaGFzIDMwIG9yIDI5IG9yIHdoYXRldmVyLi4uXG4gIC8vIGhlYWQgYmFjayB0byB0aGUgbWF4IG9mIHRoZSB0YXJnZXQgbW9udGhcbiAgaWYgKGR0LmdldERhdGUoKSA8IGRheU9mTW9udGgpIHtcbiAgICBkdC5zZXREYXRlKDApO1xuICB9XG5cbiAgcmV0dXJuIGR0O1xufVxuXG4vKipcbiAqIHNoaWZ0WWVhciBzaGlmdHMgdGhlIHNwZWNpZmllZCBkYXRlIGJ5IG4geWVhcnNcbiAqXG4gKiBAcGFyYW0ge0RhdGV9IGR0XG4gKiBAcGFyYW0ge251bWJlcn0gblxuICogQHJldHVybnMge0RhdGV9XG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBzaGlmdFllYXIoZHQ6IERhdGUsIG46IG51bWJlcikge1xuICBkdCA9IG5ldyBEYXRlKGR0KTtcbiAgZHQuc2V0RnVsbFllYXIoZHQuZ2V0RnVsbFllYXIoKSArIG4pO1xuICByZXR1cm4gZHQ7XG59XG5cbi8qKlxuICogc2V0WWVhciBjaGFuZ2VzIHRoZSBzcGVjaWZpZWQgZGF0ZSB0byB0aGUgc3BlY2lmaWVkIHllYXJcbiAqXG4gKiBAcGFyYW0ge0RhdGV9IGR0XG4gKiBAcGFyYW0ge251bWJlcn0geWVhclxuICovXG5leHBvcnQgZnVuY3Rpb24gc2V0WWVhcihkdDogRGF0ZSwgeWVhcjogbnVtYmVyKSB7XG4gIGR0ID0gbmV3IERhdGUoZHQpO1xuICBkdC5zZXRGdWxsWWVhcih5ZWFyKTtcbiAgcmV0dXJuIGR0O1xufVxuXG4vKipcbiAqIHNldE1vbnRoIGNoYW5nZXMgdGhlIHNwZWNpZmllZCBkYXRlIHRvIHRoZSBzcGVjaWZpZWQgbW9udGhcbiAqXG4gKiBAcGFyYW0ge0RhdGV9IGR0XG4gKiBAcGFyYW0ge251bWJlcn0gbW9udGhcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHNldE1vbnRoKGR0OiBEYXRlLCBtb250aDogbnVtYmVyKSB7XG4gIHJldHVybiBzaGlmdE1vbnRoKGR0LCBtb250aCAtIGR0LmdldE1vbnRoKCkpO1xufVxuXG4vKipcbiAqIGRhdGVPclBhcnNlIGNyZWF0ZXMgYSBmdW5jdGlvbiB3aGljaCwgZ2l2ZW4gYSBkYXRlIG9yIHN0cmluZywgcmV0dXJucyBhIGRhdGVcbiAqXG4gKiBAcGFyYW0ge2Z1bmN0aW9ufSBwYXJzZSB0aGUgZnVuY3Rpb24gdXNlZCB0byBwYXJzZSBzdHJpbmdzXG4gKiBAcmV0dXJucyB7ZnVuY3Rpb259XG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkYXRlT3JQYXJzZShwYXJzZTogKGNhbmRpZGF0ZTogRGF0ZSB8IHN0cmluZykgPT4gRGF0ZSkge1xuICByZXR1cm4gZnVuY3Rpb24gKGR0OiBEYXRlIHwgc3RyaW5nKSB7XG4gICAgcmV0dXJuIGRyb3BUaW1lKHR5cGVvZiBkdCA9PT0gJ3N0cmluZycgPyBwYXJzZShkdCkgOiBkdCk7XG4gIH07XG59XG5cbi8qKlxuICogY29uc3RyYWluRGF0ZSByZXR1cm5zIGR0IG9yIG1pbi9tYXggZGVwZW5kaW5nIG9uIHdoZXRoZXIgZHQgaXMgb3V0IG9mIGJvdW5kcyAoaW5jbHVzaXZlKVxuICpcbiAqIEBleHBvcnRcbiAqIEBwYXJhbSB7RGF0ZX0gZHRcbiAqIEBwYXJhbSB7RGF0ZX0gbWluXG4gKiBAcGFyYW0ge0RhdGV9IG1heFxuICogQHJldHVybnMge0RhdGV9XG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBjb25zdHJhaW5EYXRlKGR0OiBEYXRlLCBtaW46IERhdGUsIG1heDogRGF0ZSkge1xuICByZXR1cm4gKGR0IDwgbWluKSA/IG1pbiA6XG4gICAgICAgICAoZHQgPiBtYXgpID8gbWF4IDpcbiAgICAgICAgIGR0O1xufVxuXG5mdW5jdGlvbiBkcm9wVGltZShkdDogRGF0ZSB8IHN0cmluZykge1xuICBkdCA9IG5ldyBEYXRlKGR0KTtcbiAgZHQuc2V0SG91cnMoMCwgMCwgMCwgMCk7XG4gIHJldHVybiBkdDtcbn1cbiJdLCJtYXBwaW5ncyI6IjtBQUFBOztBQUVBOzs7QUFFQTs7OztBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUpBO0FBTUE7Ozs7OztBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBRkE7QUFJQTs7Ozs7O0FBTUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSkE7QUFNQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFqQkE7QUFtQkE7Ozs7OztBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUpBO0FBTUE7Ozs7O0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSkE7QUFNQTs7Ozs7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUZBO0FBSUE7Ozs7O0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSkE7QUFNQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFKQTtBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Iiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/lib/date-manip.ts\n");
+
+/***/ }),
+
+/***/ "./src/lib/dom.ts":
+/*!************************!*\
+  !*** ./src/lib/dom.ts ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Helper functions for dealing with dom elements.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.on = exports.Key = void 0;\nexports.Key = {\n    left: 37,\n    up: 38,\n    right: 39,\n    down: 40,\n    enter: 13,\n    esc: 27,\n};\n/**\n * on attaches an event handler to the specified element, and returns an\n * off function which can be used to remove the handler.\n *\n * @param {string} evt the name of the event to handle\n * @param {HTMLElement} el the element to attach to\n * @param {function} handler the event handler\n * @returns {function} the off function\n */\nfunction on(evt, el, handler) {\n    el.addEventListener(evt, handler, true);\n    return function () {\n        el.removeEventListener(evt, handler, true);\n    };\n}\nexports.on = on;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbGliL2RvbS50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL2xpYi9kb20udHM/ZTA2ZCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIEhlbHBlciBmdW5jdGlvbnMgZm9yIGRlYWxpbmcgd2l0aCBkb20gZWxlbWVudHMuXG4gKi9cblxuZXhwb3J0IHZhciBLZXkgPSB7XG4gIGxlZnQ6IDM3LFxuICB1cDogMzgsXG4gIHJpZ2h0OiAzOSxcbiAgZG93bjogNDAsXG4gIGVudGVyOiAxMyxcbiAgZXNjOiAyNyxcbn07XG5cbi8qKlxuICogb24gYXR0YWNoZXMgYW4gZXZlbnQgaGFuZGxlciB0byB0aGUgc3BlY2lmaWVkIGVsZW1lbnQsIGFuZCByZXR1cm5zIGFuXG4gKiBvZmYgZnVuY3Rpb24gd2hpY2ggY2FuIGJlIHVzZWQgdG8gcmVtb3ZlIHRoZSBoYW5kbGVyLlxuICpcbiAqIEBwYXJhbSB7c3RyaW5nfSBldnQgdGhlIG5hbWUgb2YgdGhlIGV2ZW50IHRvIGhhbmRsZVxuICogQHBhcmFtIHtIVE1MRWxlbWVudH0gZWwgdGhlIGVsZW1lbnQgdG8gYXR0YWNoIHRvXG4gKiBAcGFyYW0ge2Z1bmN0aW9ufSBoYW5kbGVyIHRoZSBldmVudCBoYW5kbGVyXG4gKiBAcmV0dXJucyB7ZnVuY3Rpb259IHRoZSBvZmYgZnVuY3Rpb25cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIG9uKGV2dDogc3RyaW5nLCBlbDogSFRNTEVsZW1lbnQsIGhhbmRsZXI6IEV2ZW50TGlzdGVuZXJPckV2ZW50TGlzdGVuZXJPYmplY3QpIHtcbiAgZWwuYWRkRXZlbnRMaXN0ZW5lcihldnQsIGhhbmRsZXIsIHRydWUpO1xuXG4gIHJldHVybiBmdW5jdGlvbiAoKSB7XG4gICAgZWwucmVtb3ZlRXZlbnRMaXN0ZW5lcihldnQsIGhhbmRsZXIsIHRydWUpO1xuICB9O1xufSJdLCJtYXBwaW5ncyI6IjtBQUFBOztBQUVBOzs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7Ozs7Ozs7O0FBUUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFOQTsiLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/lib/dom.ts\n");
+
+/***/ }),
+
+/***/ "./src/lib/emitter.ts":
+/*!****************************!*\
+  !*** ./src/lib/emitter.ts ***!
+  \****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Defines simple event emitter behavior.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\n/**\n * Emitter constructs a new emitter object which has on/off methods.\n *\n * @returns {EventEmitter}\n */\nfunction Emitter() {\n    var handlers = {};\n    function onOne(name, handler) {\n        (handlers[name] = (handlers[name] || [])).push(handler);\n    }\n    function onMany(fns) {\n        for (const name in fns) {\n            onOne(name, fns[name]);\n        }\n    }\n    return {\n        on: function (name, handler) {\n            if (handler) {\n                onOne(name, handler);\n            }\n            else {\n                onMany(name);\n            }\n            return this;\n        },\n        emit: function (name, arg) {\n            (handlers[name] || []).forEach(function (handler) {\n                handler(name, arg);\n            });\n        },\n        off: function (name, handler) {\n            if (!name) {\n                handlers = {};\n            }\n            else if (!handler) {\n                handlers[name] = [];\n            }\n            else {\n                handlers[name] = (handlers[name] || []).filter(function (h) {\n                    return h !== handler;\n                });\n            }\n            return this;\n        }\n    };\n}\nexports.default = Emitter;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbGliL2VtaXR0ZXIudHMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9UaW55RGF0ZVBpY2tlci8uL3NyYy9saWIvZW1pdHRlci50cz9mZTk1Il0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGZpbGUgRGVmaW5lcyBzaW1wbGUgZXZlbnQgZW1pdHRlciBiZWhhdmlvci5cbiAqL1xuXG50eXBlIFRFbWl0dGVyRm4gPSAobmFtZTogc3RyaW5nLCBhcmc6IGFueSkgPT4gdm9pZFxuXG5pbnRlcmZhY2UgSUhhbmRsZXJzIHtcbiAgW2tleTpzdHJpbmddOiBBcnJheTxURW1pdHRlckZuPlxufVxuXG5cbi8qKlxuICogRW1pdHRlciBjb25zdHJ1Y3RzIGEgbmV3IGVtaXR0ZXIgb2JqZWN0IHdoaWNoIGhhcyBvbi9vZmYgbWV0aG9kcy5cbiAqXG4gKiBAcmV0dXJucyB7RXZlbnRFbWl0dGVyfVxuICovXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBFbWl0dGVyKCkge1xuICB2YXIgaGFuZGxlcnM6IElIYW5kbGVycyA9IHt9O1xuXG4gIGZ1bmN0aW9uIG9uT25lKG5hbWU6IHN0cmluZywgaGFuZGxlcjogVEVtaXR0ZXJGbikge1xuICAgIChoYW5kbGVyc1tuYW1lXSA9IChoYW5kbGVyc1tuYW1lXSB8fCBbXSkpLnB1c2goaGFuZGxlcik7XG4gIH1cblxuICBmdW5jdGlvbiBvbk1hbnkoZm5zOiBBcnJheTxURW1pdHRlckZuPikge1xuICAgIGZvciAoY29uc3QgbmFtZSBpbiBmbnMpIHtcbiAgICAgIG9uT25lKG5hbWUsIGZuc1tuYW1lXSk7XG4gICAgfVxuICB9XG5cbiAgcmV0dXJuIHtcbiAgICBvbjogZnVuY3Rpb24gKG5hbWU6IHN0cmluZyB8IEFycmF5PFRFbWl0dGVyRm4+LCBoYW5kbGVyOiBURW1pdHRlckZuKSB7XG4gICAgICBpZiAoaGFuZGxlcikge1xuICAgICAgICBvbk9uZShuYW1lIGFzIHN0cmluZywgaGFuZGxlcik7XG4gICAgICB9IGVsc2Uge1xuICAgICAgICBvbk1hbnkobmFtZSBhcyBBcnJheTxURW1pdHRlckZuPik7XG4gICAgICB9XG5cbiAgICAgIHJldHVybiB0aGlzO1xuICAgIH0sXG5cbiAgICBlbWl0OiBmdW5jdGlvbiAobmFtZTogc3RyaW5nLCBhcmc6IGFueSkge1xuICAgICAgKGhhbmRsZXJzW25hbWVdIHx8IFtdKS5mb3JFYWNoKGZ1bmN0aW9uIChoYW5kbGVyKSB7XG4gICAgICAgIGhhbmRsZXIobmFtZSwgYXJnKTtcbiAgICAgIH0pO1xuICAgIH0sXG5cbiAgICBvZmY6IGZ1bmN0aW9uIChuYW1lOiBzdHJpbmcsIGhhbmRsZXI6IFRFbWl0dGVyRm4pIHtcbiAgICAgIGlmICghbmFtZSkge1xuICAgICAgICBoYW5kbGVycyA9IHt9O1xuICAgICAgfSBlbHNlIGlmICghaGFuZGxlcikge1xuICAgICAgICBoYW5kbGVyc1tuYW1lXSA9IFtdO1xuICAgICAgfSBlbHNlIHtcbiAgICAgICAgaGFuZGxlcnNbbmFtZV0gPSAoaGFuZGxlcnNbbmFtZV0gfHwgW10pLmZpbHRlcihmdW5jdGlvbiAoaCkge1xuICAgICAgICAgIHJldHVybiBoICE9PSBoYW5kbGVyO1xuICAgICAgICB9KTtcbiAgICAgIH1cblxuICAgICAgcmV0dXJuIHRoaXM7XG4gICAgfVxuICB9O1xufVxuIl0sIm1hcHBpbmdzIjoiO0FBQUE7O0FBRUE7O0FBU0E7Ozs7QUFJQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFBQTtBQUNBO0FBQ0E7QUFBQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUE1Q0E7Iiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/lib/emitter.ts\n");
+
+/***/ }),
+
+/***/ "./src/lib/fns.ts":
+/*!************************!*\
+  !*** ./src/lib/fns.ts ***!
+  \************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Utility functions for function manipulation.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nexports.cp = exports.noop = exports.bufferFn = void 0;\n/**\n * bufferFn buffers calls to fn so they only happen every ms milliseconds\n *\n * @param {number} ms number of milliseconds\n * @param {function} fn the function to be buffered\n * @returns {function}\n */\nfunction bufferFn(ms, fn) {\n    let timeout = undefined;\n    return function () {\n        clearTimeout(timeout);\n        timeout = setTimeout(fn, ms);\n    };\n}\nexports.bufferFn = bufferFn;\n/**\n * noop is a function which does nothing at all.\n */\nfunction noop() { }\nexports.noop = noop;\n/**\n * copy properties from object o2 to object o1.\n *\n * @params {Object} o1\n * @params {Object} o2\n * @returns {Object}\n */\nfunction cp(...args) {\n    var o1 = args[0];\n    for (var i = 1; i < args.length; ++i) {\n        var o2 = args[i] || {};\n        for (var key in o2) {\n            o1[key] = o2[key];\n        }\n    }\n    return o1;\n}\nexports.cp = cp;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbGliL2Zucy50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL2xpYi9mbnMudHM/ODY0ZSJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIFV0aWxpdHkgZnVuY3Rpb25zIGZvciBmdW5jdGlvbiBtYW5pcHVsYXRpb24uXG4gKi9cblxuLyoqXG4gKiBidWZmZXJGbiBidWZmZXJzIGNhbGxzIHRvIGZuIHNvIHRoZXkgb25seSBoYXBwZW4gZXZlcnkgbXMgbWlsbGlzZWNvbmRzXG4gKlxuICogQHBhcmFtIHtudW1iZXJ9IG1zIG51bWJlciBvZiBtaWxsaXNlY29uZHNcbiAqIEBwYXJhbSB7ZnVuY3Rpb259IGZuIHRoZSBmdW5jdGlvbiB0byBiZSBidWZmZXJlZFxuICogQHJldHVybnMge2Z1bmN0aW9ufVxuICovXG5leHBvcnQgZnVuY3Rpb24gYnVmZmVyRm4obXM6IG51bWJlciwgZm46ICguLi5hcmdzOmFueSkgPT4gYW55KSB7XG4gIGxldCB0aW1lb3V0OiBhbnkgPSB1bmRlZmluZWQ7XG4gIHJldHVybiBmdW5jdGlvbiAoKSB7XG4gICAgY2xlYXJUaW1lb3V0KHRpbWVvdXQpO1xuICAgIHRpbWVvdXQgPSBzZXRUaW1lb3V0KGZuLCBtcyk7XG4gIH07XG59XG5cbi8qKlxuICogbm9vcCBpcyBhIGZ1bmN0aW9uIHdoaWNoIGRvZXMgbm90aGluZyBhdCBhbGwuXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBub29wKCkgeyB9XG5cbi8qKlxuICogY29weSBwcm9wZXJ0aWVzIGZyb20gb2JqZWN0IG8yIHRvIG9iamVjdCBvMS5cbiAqXG4gKiBAcGFyYW1zIHtPYmplY3R9IG8xXG4gKiBAcGFyYW1zIHtPYmplY3R9IG8yXG4gKiBAcmV0dXJucyB7T2JqZWN0fVxuICovXG5leHBvcnQgZnVuY3Rpb24gY3AoLi4uYXJnczogYW55W10pIHtcbiAgdmFyIG8xID0gYXJnc1swXTtcbiAgZm9yICh2YXIgaSA9IDE7IGkgPCBhcmdzLmxlbmd0aDsgKytpKSB7XG4gICAgdmFyIG8yID0gYXJnc1tpXSB8fCB7fTtcbiAgICBmb3IgKHZhciBrZXkgaW4gbzIpIHtcbiAgICAgIG8xW2tleV0gPSBvMltrZXldO1xuICAgIH1cbiAgfVxuICByZXR1cm4gbzE7XG59XG4iXSwibWFwcGluZ3MiOiI7QUFBQTs7QUFFQTs7O0FBRUE7Ozs7OztBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFOQTtBQVFBOztBQUVBO0FBQ0E7QUFBQTtBQUVBOzs7Ozs7QUFNQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBVEE7Iiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/lib/fns.ts\n");
+
+/***/ }),
+
+/***/ "./src/mode/base-mode.ts":
+/*!*******************************!*\
+  !*** ./src/mode/base-mode.ts ***!
+  \*******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\n/**\n * @file Defines the base date picker behavior, overridden by constious modes.\n */\nconst day_picker_1 = __importDefault(__webpack_require__(/*! ../views/day-picker */ \"./src/views/day-picker.ts\"));\nconst month_picker_1 = __importDefault(__webpack_require__(/*! ../views/month-picker */ \"./src/views/month-picker.ts\"));\nconst year_picker_1 = __importDefault(__webpack_require__(/*! ../views/year-picker */ \"./src/views/year-picker.ts\"));\nconst fns_1 = __webpack_require__(/*! ../lib/fns */ \"./src/lib/fns.ts\");\nconst dom_1 = __webpack_require__(/*! ../lib/dom */ \"./src/lib/dom.ts\");\nconst date_manip_1 = __webpack_require__(/*! ../lib/date-manip */ \"./src/lib/date-manip.ts\");\nconst views = {\n    day: day_picker_1.default,\n    year: year_picker_1.default,\n    month: month_picker_1.default,\n};\nfunction BaseMode(input, emit, opts) {\n    let detatchInputEvents; // A function that detaches all events from the input\n    let closing = false; // A hack to prevent calendar from re-opening when closing.\n    let selectedDate; // The currently selected date\n    const dp = {\n        // The root DOM element for the date picker, initialized on first open.\n        el: undefined,\n        opts: opts,\n        shouldFocusOnBlur: true,\n        shouldFocusOnRender: true,\n        state: initialState(),\n        adjustPosition: fns_1.noop,\n        containerHTML: '<div class=\"dp\"></div>',\n        attachToDom: function () {\n            opts.appendTo.appendChild(dp.el);\n        },\n        updateInput: function (selectedDate) {\n            const e = new CustomEvent('change', { bubbles: true });\n            input.value = selectedDate ? opts.format(selectedDate) : '';\n            input.dispatchEvent(e);\n        },\n        computeSelectedDate: function () {\n            return opts.parse(input.value);\n        },\n        currentView: function () {\n            return views[dp.state.view];\n        },\n        open: function () {\n            if (closing) {\n                return;\n            }\n            if (!dp.el) {\n                dp.el = createContainerElement(opts, dp.containerHTML);\n                attachContainerEvents(dp);\n            }\n            selectedDate = date_manip_1.constrainDate(dp.computeSelectedDate(), opts.min, opts.max);\n            dp.state.hilightedDate = selectedDate || opts.hilightedDate;\n            dp.state.view = 'day';\n            dp.attachToDom();\n            dp.render();\n            emit('open');\n        },\n        isVisible: function () {\n            return !!dp.el && !!dp.el.parentNode;\n        },\n        hasFocus: function () {\n            const focused = document.activeElement;\n            return dp.el &&\n                dp.el.contains(focused) &&\n                focused.className.indexOf('dp-focuser') < 0;\n        },\n        shouldHide: function () {\n            return dp.isVisible();\n        },\n        close: function (becauseOfBlur) {\n            const el = dp.el;\n            if (!dp.isVisible()) {\n                return;\n            }\n            if (el) {\n                const parent = el.parentNode;\n                parent && parent.removeChild(el);\n            }\n            closing = true;\n            if (becauseOfBlur && dp.shouldFocusOnBlur) {\n                focusInput(input);\n            }\n            // When we close, the input often gains refocus, which\n            // can then launch the date picker again, so we buffer\n            // a bit and don't show the date picker within N ms of closing\n            setTimeout(function () {\n                closing = false;\n            }, 100);\n            emit('close');\n        },\n        destroy: function () {\n            dp.close();\n            detatchInputEvents();\n        },\n        render: function () {\n            if (!dp.el) {\n                return;\n            }\n            const hadFocus = dp.hasFocus();\n            const html = dp.currentView().render(dp);\n            if (html) {\n                dp.el.firstChild.innerHTML = html;\n            }\n            dp.adjustPosition();\n            if (hadFocus || dp.shouldFocusOnRender) {\n                focusCurrent(dp);\n            }\n        },\n        // Conceptually similar to setState in React, updates\n        // the view state and re-renders.\n        setState: function (state) {\n            dp.state = Object.assign(Object.assign({}, dp.state), state);\n            emit('statechange');\n            dp.render();\n        },\n    };\n    detatchInputEvents = attachInputEvents(input, dp);\n    // Builds the initial view state\n    // selectedDate is a special case and causes changes to hilightedDate\n    // hilightedDate is set on open, so remains undefined initially\n    // view is the current view (day, month, year)\n    function initialState() {\n        return {\n            get selectedDate() {\n                return selectedDate;\n            },\n            set selectedDate(dt) {\n                if (dt && !opts.inRange(dt)) {\n                    return;\n                }\n                if (dt) {\n                    selectedDate = new Date(dt);\n                    dp.state.hilightedDate = selectedDate;\n                }\n                else {\n                    selectedDate = dt;\n                }\n                dp.updateInput(selectedDate);\n                emit('select');\n                dp.close();\n            },\n            view: 'day',\n        };\n    }\n    return dp;\n}\nexports.default = BaseMode;\nfunction createContainerElement(opts, containerHTML) {\n    const el = document.createElement('div');\n    el.className = opts.mode;\n    el.innerHTML = containerHTML;\n    return el;\n}\nfunction attachInputEvents(input, dp) {\n    const bufferShow = fns_1.bufferFn(5, function () {\n        if (dp.shouldHide()) {\n            dp.close();\n        }\n        else {\n            dp.open();\n        }\n    });\n    const off = [\n        dom_1.on('blur', input, fns_1.bufferFn(150, function () {\n            if (!dp.hasFocus()) {\n                dp.close(true);\n            }\n        })),\n        dom_1.on('mousedown', input, function () {\n            if (input === document.activeElement) {\n                bufferShow();\n            }\n        }),\n        dom_1.on('focus', input, bufferShow),\n        dom_1.on('input', input, function (e) {\n            if (!e || !e.target) {\n                return;\n            }\n            const target = e.target;\n            const date = dp.opts.parse(target.value);\n            isNaN(date.valueOf()) || dp.setState({\n                hilightedDate: date,\n            });\n        }),\n    ];\n    // Unregister all events that were registered above.\n    return function () {\n        off.forEach(function (f) {\n            f();\n        });\n    };\n}\nfunction focusCurrent(dp) {\n    const current = dp.el.querySelector('.dp-current');\n    return current && current.focus();\n}\nfunction attachContainerEvents(dp) {\n    const el = dp.el;\n    const calEl = el.querySelector('.dp');\n    // Hack to get iOS to show active CSS states\n    el.ontouchstart = fns_1.noop;\n    function onClick(e) {\n        if (!e) {\n            return;\n        }\n        e.target.className.split(' ').forEach(function (evt) {\n            const handler = dp.currentView().onClick[evt];\n            handler && handler(e, dp);\n        });\n    }\n    // The calender fires a blur event *every* time we redraw\n    // this means we need to buffer the blur event to see if\n    // it still has no focus after redrawing, and only then\n    // do we return focus to the input. A possible other approach\n    // would be to set context.redrawing = true on redraw and\n    // set it to false in the blur event.\n    dom_1.on('blur', calEl, fns_1.bufferFn(150, function () {\n        if (!dp.hasFocus()) {\n            dp.close(true);\n        }\n    }));\n    dom_1.on('keydown', el, function (e) {\n        const ke = e;\n        const code = ke.code || ke.keyCode;\n        if (code === dom_1.Key.enter) {\n            onClick(ke);\n        }\n        else {\n            dp.currentView().onKeyDown(ke, dp);\n        }\n    });\n    // If the user clicks in non-focusable space, but\n    // still within the date picker, we don't want to\n    // hide, so we need to hack some things...\n    dom_1.on('mousedown', calEl, function (e) {\n        //e.target.focus && e.target.focus(); // IE hack\n        if (document.activeElement !== e.target) {\n            e.preventDefault();\n            focusCurrent(dp);\n        }\n    });\n    dom_1.on('click', el, onClick);\n}\nfunction focusInput(input) {\n    // When the modal closes, we need to focus the original input so the\n    // user can continue tabbing from where they left off.\n    input.focus();\n    // iOS zonks out if we don't blur the input, so...\n    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {\n        input.blur();\n    }\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbW9kZS9iYXNlLW1vZGUudHMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9UaW55RGF0ZVBpY2tlci8uL3NyYy9tb2RlL2Jhc2UtbW9kZS50cz83YmI0Il0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGZpbGUgRGVmaW5lcyB0aGUgYmFzZSBkYXRlIHBpY2tlciBiZWhhdmlvciwgb3ZlcnJpZGRlbiBieSBjb25zdGlvdXMgbW9kZXMuXG4gKi9cbmltcG9ydCBkYXlQaWNrZXIgZnJvbSAnLi4vdmlld3MvZGF5LXBpY2tlcic7XG5pbXBvcnQgbW9udGhQaWNrZXIgZnJvbSAnLi4vdmlld3MvbW9udGgtcGlja2VyJztcbmltcG9ydCB5ZWFyUGlja2VyIGZyb20gJy4uL3ZpZXdzL3llYXItcGlja2VyJztcbmltcG9ydCB7IGJ1ZmZlckZuLCBub29wIH0gZnJvbSAnLi4vbGliL2Zucyc7XG5pbXBvcnQgeyBvbiwgS2V5IH0gZnJvbSAnLi4vbGliL2RvbSc7XG5pbXBvcnQgeyBjb25zdHJhaW5EYXRlIH0gZnJvbSAnLi4vbGliL2RhdGUtbWFuaXAnO1xuaW1wb3J0IHsgSURhdGVQaWNrZXJPcHRpb25zLCBJRGF0ZVBpY2tlciwgSVN0YXRlIH0gZnJvbSAnLi4vaW50ZXJmYWNlcyc7XG5cbmNvbnN0IHZpZXdzID0ge1xuICAgIGRheTogZGF5UGlja2VyLFxuICAgIHllYXI6IHllYXJQaWNrZXIsXG4gICAgbW9udGg6IG1vbnRoUGlja2VyLFxufTtcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gQmFzZU1vZGUoaW5wdXQ6IEhUTUxJbnB1dEVsZW1lbnQsIGVtaXQ6IGFueSwgb3B0czogSURhdGVQaWNrZXJPcHRpb25zKTogSURhdGVQaWNrZXIge1xuICAgIGxldCBkZXRhdGNoSW5wdXRFdmVudHM6ICgpID0+IHZvaWQ7IC8vIEEgZnVuY3Rpb24gdGhhdCBkZXRhY2hlcyBhbGwgZXZlbnRzIGZyb20gdGhlIGlucHV0XG4gICAgbGV0IGNsb3NpbmcgPSBmYWxzZTsgLy8gQSBoYWNrIHRvIHByZXZlbnQgY2FsZW5kYXIgZnJvbSByZS1vcGVuaW5nIHdoZW4gY2xvc2luZy5cbiAgICBsZXQgc2VsZWN0ZWREYXRlOiBEYXRlOyAvLyBUaGUgY3VycmVudGx5IHNlbGVjdGVkIGRhdGVcbiAgICBjb25zdCBkcCA9IHtcbiAgICAgICAgLy8gVGhlIHJvb3QgRE9NIGVsZW1lbnQgZm9yIHRoZSBkYXRlIHBpY2tlciwgaW5pdGlhbGl6ZWQgb24gZmlyc3Qgb3Blbi5cbiAgICAgICAgZWw6IHVuZGVmaW5lZCxcbiAgICAgICAgb3B0czogb3B0cyxcbiAgICAgICAgc2hvdWxkRm9jdXNPbkJsdXI6IHRydWUsXG4gICAgICAgIHNob3VsZEZvY3VzT25SZW5kZXI6IHRydWUsXG4gICAgICAgIHN0YXRlOiBpbml0aWFsU3RhdGUoKSxcbiAgICAgICAgYWRqdXN0UG9zaXRpb246IG5vb3AsXG4gICAgICAgIGNvbnRhaW5lckhUTUw6ICc8ZGl2IGNsYXNzPVwiZHBcIj48L2Rpdj4nLFxuXG4gICAgICAgIGF0dGFjaFRvRG9tOiBmdW5jdGlvbiAoKSB7XG4gICAgICAgICAgICBvcHRzLmFwcGVuZFRvLmFwcGVuZENoaWxkKGRwLmVsIGFzIHVua25vd24gYXMgTm9kZSk7XG4gICAgICAgIH0sXG5cbiAgICAgICAgdXBkYXRlSW5wdXQ6IGZ1bmN0aW9uIChzZWxlY3RlZERhdGU6IERhdGUpIHtcbiAgICAgICAgICAgIGNvbnN0IGUgPSBuZXcgQ3VzdG9tRXZlbnQoJ2NoYW5nZScsIHsgYnViYmxlczogdHJ1ZSB9KTtcbiAgICAgICAgICAgIGlucHV0LnZhbHVlID0gc2VsZWN0ZWREYXRlID8gb3B0cy5mb3JtYXQoc2VsZWN0ZWREYXRlKSA6ICcnO1xuICAgICAgICAgICAgaW5wdXQuZGlzcGF0Y2hFdmVudChlKTtcbiAgICAgICAgfSxcblxuICAgICAgICBjb21wdXRlU2VsZWN0ZWREYXRlOiBmdW5jdGlvbiAoKSB7XG4gICAgICAgICAgICByZXR1cm4gb3B0cy5wYXJzZShpbnB1dC52YWx1ZSk7XG4gICAgICAgIH0sXG5cbiAgICAgICAgY3VycmVudFZpZXc6IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIHJldHVybiB2aWV3c1tkcC5zdGF0ZS52aWV3XTtcbiAgICAgICAgfSxcblxuICAgICAgICBvcGVuOiBmdW5jdGlvbiAoKSB7XG4gICAgICAgICAgICBpZiAoY2xvc2luZykge1xuICAgICAgICAgICAgICAgIHJldHVybjtcbiAgICAgICAgICAgIH1cblxuICAgICAgICAgICAgaWYgKCFkcC5lbCkge1xuICAgICAgICAgICAgICAgIGRwLmVsID0gY3JlYXRlQ29udGFpbmVyRWxlbWVudChvcHRzLCBkcC5jb250YWluZXJIVE1MKTtcbiAgICAgICAgICAgICAgICBhdHRhY2hDb250YWluZXJFdmVudHMoZHApO1xuICAgICAgICAgICAgfVxuXG4gICAgICAgICAgICBzZWxlY3RlZERhdGUgPSBjb25zdHJhaW5EYXRlKGRwLmNvbXB1dGVTZWxlY3RlZERhdGUoKSwgb3B0cy5taW4sIG9wdHMubWF4KTtcbiAgICAgICAgICAgIGRwLnN0YXRlLmhpbGlnaHRlZERhdGUgPSBzZWxlY3RlZERhdGUgfHwgb3B0cy5oaWxpZ2h0ZWREYXRlO1xuICAgICAgICAgICAgZHAuc3RhdGUudmlldyA9ICdkYXknO1xuXG4gICAgICAgICAgICBkcC5hdHRhY2hUb0RvbSgpO1xuICAgICAgICAgICAgZHAucmVuZGVyKCk7XG5cbiAgICAgICAgICAgIGVtaXQoJ29wZW4nKTtcbiAgICAgICAgfSxcblxuICAgICAgICBpc1Zpc2libGU6IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIHJldHVybiAhIWRwLmVsICYmICEhZHAuZWwucGFyZW50Tm9kZTtcbiAgICAgICAgfSxcblxuICAgICAgICBoYXNGb2N1czogZnVuY3Rpb24gKCkge1xuICAgICAgICAgICAgY29uc3QgZm9jdXNlZCA9IGRvY3VtZW50LmFjdGl2ZUVsZW1lbnQ7XG4gICAgICAgICAgICByZXR1cm4gZHAuZWwgJiZcbiAgICAgICAgICAgICAgICBkcC5lbC5jb250YWlucyhmb2N1c2VkKSAmJlxuICAgICAgICAgICAgICAgIGZvY3VzZWQhLmNsYXNzTmFtZS5pbmRleE9mKCdkcC1mb2N1c2VyJykgPCAwO1xuICAgICAgICB9LFxuXG4gICAgICAgIHNob3VsZEhpZGU6IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIHJldHVybiBkcC5pc1Zpc2libGUoKTtcbiAgICAgICAgfSxcblxuICAgICAgICBjbG9zZTogZnVuY3Rpb24gKGJlY2F1c2VPZkJsdXIpIHtcbiAgICAgICAgICAgIGNvbnN0IGVsID0gZHAuZWw7XG5cbiAgICAgICAgICAgIGlmICghZHAuaXNWaXNpYmxlKCkpIHtcbiAgICAgICAgICAgICAgICByZXR1cm47XG4gICAgICAgICAgICB9XG5cbiAgICAgICAgICAgIGlmIChlbCkge1xuICAgICAgICAgICAgICAgIGNvbnN0IHBhcmVudCA9IGVsLnBhcmVudE5vZGU7XG4gICAgICAgICAgICAgICAgcGFyZW50ICYmIHBhcmVudC5yZW1vdmVDaGlsZChlbCk7XG4gICAgICAgICAgICB9XG5cbiAgICAgICAgICAgIGNsb3NpbmcgPSB0cnVlO1xuXG4gICAgICAgICAgICBpZiAoYmVjYXVzZU9mQmx1ciAmJiBkcC5zaG91bGRGb2N1c09uQmx1cikge1xuICAgICAgICAgICAgICAgIGZvY3VzSW5wdXQoaW5wdXQpO1xuICAgICAgICAgICAgfVxuXG4gICAgICAgICAgICAvLyBXaGVuIHdlIGNsb3NlLCB0aGUgaW5wdXQgb2Z0ZW4gZ2FpbnMgcmVmb2N1cywgd2hpY2hcbiAgICAgICAgICAgIC8vIGNhbiB0aGVuIGxhdW5jaCB0aGUgZGF0ZSBwaWNrZXIgYWdhaW4sIHNvIHdlIGJ1ZmZlclxuICAgICAgICAgICAgLy8gYSBiaXQgYW5kIGRvbid0IHNob3cgdGhlIGRhdGUgcGlja2VyIHdpdGhpbiBOIG1zIG9mIGNsb3NpbmdcbiAgICAgICAgICAgIHNldFRpbWVvdXQoZnVuY3Rpb24gKCkge1xuICAgICAgICAgICAgICAgIGNsb3NpbmcgPSBmYWxzZTtcbiAgICAgICAgICAgIH0sIDEwMCk7XG5cbiAgICAgICAgICAgIGVtaXQoJ2Nsb3NlJyk7XG4gICAgICAgIH0sXG5cbiAgICAgICAgZGVzdHJveTogZnVuY3Rpb24gKCkge1xuICAgICAgICAgICAgZHAuY2xvc2UoKTtcbiAgICAgICAgICAgIGRldGF0Y2hJbnB1dEV2ZW50cygpO1xuICAgICAgICB9LFxuXG4gICAgICAgIHJlbmRlcjogZnVuY3Rpb24gKCkge1xuICAgICAgICAgICAgaWYgKCFkcC5lbCkge1xuICAgICAgICAgICAgICAgIHJldHVybjtcbiAgICAgICAgICAgIH1cblxuICAgICAgICAgICAgY29uc3QgaGFkRm9jdXMgPSBkcC5oYXNGb2N1cygpO1xuICAgICAgICAgICAgY29uc3QgaHRtbCA9IGRwLmN1cnJlbnRWaWV3KCkucmVuZGVyKGRwKTtcbiAgICAgICAgICAgIFxuICAgICAgICAgICAgaWYgKGh0bWwpIHtcbiAgICAgICAgICAgICAgICAoZHAuZWwuZmlyc3RDaGlsZCEgYXMgSFRNTEVsZW1lbnQpLmlubmVySFRNTCA9IGh0bWw7XG4gICAgICAgICAgICB9XG5cbiAgICAgICAgICAgIGRwLmFkanVzdFBvc2l0aW9uKCk7XG5cbiAgICAgICAgICAgIGlmIChoYWRGb2N1cyB8fCBkcC5zaG91bGRGb2N1c09uUmVuZGVyKSB7XG4gICAgICAgICAgICAgICAgZm9jdXNDdXJyZW50KGRwKTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgfSxcblxuICAgICAgICAvLyBDb25jZXB0dWFsbHkgc2ltaWxhciB0byBzZXRTdGF0ZSBpbiBSZWFjdCwgdXBkYXRlc1xuICAgICAgICAvLyB0aGUgdmlldyBzdGF0ZSBhbmQgcmUtcmVuZGVycy5cbiAgICAgICAgc2V0U3RhdGU6IGZ1bmN0aW9uIChzdGF0ZTogSVN0YXRlKSB7XG4gICAgICAgICAgICBkcC5zdGF0ZSA9IHsuLi5kcC5zdGF0ZSwgLi4uc3RhdGV9XG5cbiAgICAgICAgICAgIGVtaXQoJ3N0YXRlY2hhbmdlJyk7XG4gICAgICAgICAgICBkcC5yZW5kZXIoKTtcbiAgICAgICAgfSxcbiAgICB9IGFzIElEYXRlUGlja2VyO1xuXG4gICAgZGV0YXRjaElucHV0RXZlbnRzID0gYXR0YWNoSW5wdXRFdmVudHMoaW5wdXQsIGRwKTtcblxuICAgIC8vIEJ1aWxkcyB0aGUgaW5pdGlhbCB2aWV3IHN0YXRlXG4gICAgLy8gc2VsZWN0ZWREYXRlIGlzIGEgc3BlY2lhbCBjYXNlIGFuZCBjYXVzZXMgY2hhbmdlcyB0byBoaWxpZ2h0ZWREYXRlXG4gICAgLy8gaGlsaWdodGVkRGF0ZSBpcyBzZXQgb24gb3Blbiwgc28gcmVtYWlucyB1bmRlZmluZWQgaW5pdGlhbGx5XG4gICAgLy8gdmlldyBpcyB0aGUgY3VycmVudCB2aWV3IChkYXksIG1vbnRoLCB5ZWFyKVxuICAgIGZ1bmN0aW9uIGluaXRpYWxTdGF0ZSgpOiBJU3RhdGUge1xuICAgICAgICByZXR1cm4ge1xuICAgICAgICAgICAgZ2V0IHNlbGVjdGVkRGF0ZSgpIHtcbiAgICAgICAgICAgICAgICByZXR1cm4gc2VsZWN0ZWREYXRlO1xuICAgICAgICAgICAgfSxcbiAgICAgICAgICAgIHNldCBzZWxlY3RlZERhdGUoZHQ6IERhdGUpIHtcbiAgICAgICAgICAgICAgICBpZiAoZHQgJiYgIW9wdHMuaW5SYW5nZShkdCkpIHtcbiAgICAgICAgICAgICAgICAgICAgcmV0dXJuO1xuICAgICAgICAgICAgICAgIH1cblxuICAgICAgICAgICAgICAgIGlmIChkdCkge1xuICAgICAgICAgICAgICAgICAgICBzZWxlY3RlZERhdGUgPSBuZXcgRGF0ZShkdCk7XG4gICAgICAgICAgICAgICAgICAgIGRwLnN0YXRlLmhpbGlnaHRlZERhdGUgPSBzZWxlY3RlZERhdGU7XG4gICAgICAgICAgICAgICAgfSBlbHNlIHtcbiAgICAgICAgICAgICAgICAgICAgc2VsZWN0ZWREYXRlID0gZHQ7XG4gICAgICAgICAgICAgICAgfVxuXG4gICAgICAgICAgICAgICAgZHAudXBkYXRlSW5wdXQoc2VsZWN0ZWREYXRlKTtcbiAgICAgICAgICAgICAgICBlbWl0KCdzZWxlY3QnKTtcbiAgICAgICAgICAgICAgICBkcC5jbG9zZSgpO1xuICAgICAgICAgICAgfSxcbiAgICAgICAgICAgIHZpZXc6ICdkYXknLFxuICAgICAgICB9O1xuICAgIH1cblxuICAgIHJldHVybiBkcDtcbn1cblxuZnVuY3Rpb24gY3JlYXRlQ29udGFpbmVyRWxlbWVudChvcHRzOiBJRGF0ZVBpY2tlck9wdGlvbnMsIGNvbnRhaW5lckhUTUw6IHN0cmluZykge1xuICAgIGNvbnN0IGVsID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7XG5cbiAgICBlbC5jbGFzc05hbWUgPSBvcHRzLm1vZGU7XG4gICAgZWwuaW5uZXJIVE1MID0gY29udGFpbmVySFRNTDtcblxuICAgIHJldHVybiBlbDtcbn1cblxuZnVuY3Rpb24gYXR0YWNoSW5wdXRFdmVudHMoaW5wdXQ6IEhUTUxFbGVtZW50LCBkcDogSURhdGVQaWNrZXIpIHtcbiAgICBjb25zdCBidWZmZXJTaG93ID0gYnVmZmVyRm4oNSwgZnVuY3Rpb24gKCkge1xuICAgICAgICBpZiAoZHAuc2hvdWxkSGlkZSgpKSB7XG4gICAgICAgICAgICBkcC5jbG9zZSgpO1xuICAgICAgICB9IGVsc2Uge1xuICAgICAgICAgICAgZHAub3BlbigpO1xuICAgICAgICB9XG4gICAgfSk7XG5cbiAgICBjb25zdCBvZmYgPSBbXG4gICAgICAgIG9uKCdibHVyJywgaW5wdXQsIGJ1ZmZlckZuKDE1MCwgZnVuY3Rpb24gKCkge1xuICAgICAgICAgICAgaWYgKCFkcC5oYXNGb2N1cygpKSB7XG4gICAgICAgICAgICAgICAgZHAuY2xvc2UodHJ1ZSk7XG4gICAgICAgICAgICB9XG4gICAgICAgIH0pKSxcblxuICAgICAgICBvbignbW91c2Vkb3duJywgaW5wdXQsIGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIGlmIChpbnB1dCA9PT0gZG9jdW1lbnQuYWN0aXZlRWxlbWVudCkge1xuICAgICAgICAgICAgICAgIGJ1ZmZlclNob3coKTtcbiAgICAgICAgICAgIH1cbiAgICAgICAgfSksXG5cbiAgICAgICAgb24oJ2ZvY3VzJywgaW5wdXQsIGJ1ZmZlclNob3cpLFxuXG4gICAgICAgIG9uKCdpbnB1dCcsIGlucHV0LCBmdW5jdGlvbiAoZSkge1xuICAgICAgICAgICAgaWYgKCFlIHx8ICFlLnRhcmdldCkge1xuICAgICAgICAgICAgICAgIHJldHVyblxuICAgICAgICAgICAgfVxuICAgICAgICAgICAgY29uc3QgdGFyZ2V0ID0gZS50YXJnZXQgYXMgSFRNTElucHV0RWxlbWVudFxuICAgICAgICAgICAgY29uc3QgZGF0ZSA9IGRwLm9wdHMucGFyc2UodGFyZ2V0LnZhbHVlKTtcbiAgICAgICAgICAgIGlzTmFOKGRhdGUudmFsdWVPZigpKSB8fCBkcC5zZXRTdGF0ZSh7XG4gICAgICAgICAgICAgICAgaGlsaWdodGVkRGF0ZTogZGF0ZSxcbiAgICAgICAgICAgIH0pO1xuICAgICAgICB9KSxcbiAgICBdO1xuXG4gICAgLy8gVW5yZWdpc3RlciBhbGwgZXZlbnRzIHRoYXQgd2VyZSByZWdpc3RlcmVkIGFib3ZlLlxuICAgIHJldHVybiBmdW5jdGlvbiAoKSB7XG4gICAgICAgIG9mZi5mb3JFYWNoKGZ1bmN0aW9uIChmKSB7XG4gICAgICAgICAgICBmKCk7XG4gICAgICAgIH0pO1xuICAgIH07XG59XG5cbmZ1bmN0aW9uIGZvY3VzQ3VycmVudChkcDogSURhdGVQaWNrZXIpIHtcbiAgICBjb25zdCBjdXJyZW50ID0gZHAuZWwhLnF1ZXJ5U2VsZWN0b3IoJy5kcC1jdXJyZW50JykgYXMgSFRNTEVsZW1lbnRcbiAgICByZXR1cm4gY3VycmVudCAmJiBjdXJyZW50LmZvY3VzKCk7XG59XG5cbmZ1bmN0aW9uIGF0dGFjaENvbnRhaW5lckV2ZW50cyhkcDogSURhdGVQaWNrZXIpIHtcbiAgICBjb25zdCBlbCA9IGRwLmVsIGFzIEhUTUxFbGVtZW50O1xuICAgIGNvbnN0IGNhbEVsID0gZWwucXVlcnlTZWxlY3RvcignLmRwJykgYXMgSFRNTEVsZW1lbnQ7XG5cbiAgICAvLyBIYWNrIHRvIGdldCBpT1MgdG8gc2hvdyBhY3RpdmUgQ1NTIHN0YXRlc1xuICAgIGVsIS5vbnRvdWNoc3RhcnQgPSBub29wO1xuXG4gICAgZnVuY3Rpb24gb25DbGljayhlOiBhbnkpIHtcbiAgICAgICAgaWYgKCFlKSB7XG4gICAgICAgICAgICByZXR1cm5cbiAgICAgICAgfVxuXG4gICAgICAgIGUudGFyZ2V0LmNsYXNzTmFtZS5zcGxpdCgnICcpLmZvckVhY2goZnVuY3Rpb24gKGV2dDogc3RyaW5nKSB7XG4gICAgICAgICAgICBjb25zdCBoYW5kbGVyID0gZHAuY3VycmVudFZpZXcoKS5vbkNsaWNrW2V2dF07XG4gICAgICAgICAgICBoYW5kbGVyICYmIGhhbmRsZXIoZSwgZHApO1xuICAgICAgICB9KTtcbiAgICB9XG5cbiAgICAvLyBUaGUgY2FsZW5kZXIgZmlyZXMgYSBibHVyIGV2ZW50ICpldmVyeSogdGltZSB3ZSByZWRyYXdcbiAgICAvLyB0aGlzIG1lYW5zIHdlIG5lZWQgdG8gYnVmZmVyIHRoZSBibHVyIGV2ZW50IHRvIHNlZSBpZlxuICAgIC8vIGl0IHN0aWxsIGhhcyBubyBmb2N1cyBhZnRlciByZWRyYXdpbmcsIGFuZCBvbmx5IHRoZW5cbiAgICAvLyBkbyB3ZSByZXR1cm4gZm9jdXMgdG8gdGhlIGlucHV0LiBBIHBvc3NpYmxlIG90aGVyIGFwcHJvYWNoXG4gICAgLy8gd291bGQgYmUgdG8gc2V0IGNvbnRleHQucmVkcmF3aW5nID0gdHJ1ZSBvbiByZWRyYXcgYW5kXG4gICAgLy8gc2V0IGl0IHRvIGZhbHNlIGluIHRoZSBibHVyIGV2ZW50LlxuICAgIG9uKCdibHVyJywgY2FsRWwsIGJ1ZmZlckZuKDE1MCwgZnVuY3Rpb24gKCkge1xuICAgICAgICBpZiAoIWRwLmhhc0ZvY3VzKCkpIHtcbiAgICAgICAgICAgIGRwLmNsb3NlKHRydWUpO1xuICAgICAgICB9XG4gICAgfSkpO1xuXG4gICAgb24oJ2tleWRvd24nLCBlbCwgZnVuY3Rpb24gKGUpIHtcbiAgICAgICAgY29uc3Qga2UgPSBlIGFzIEtleWJvYXJkRXZlbnRcbiAgICAgICAgY29uc3QgY29kZSA9IGtlLmNvZGUgfHwga2Uua2V5Q29kZVxuICAgICAgICBpZiAoY29kZSA9PT0gS2V5LmVudGVyKSB7XG4gICAgICAgICAgICBvbkNsaWNrKGtlKTtcbiAgICAgICAgfSBlbHNlIHtcbiAgICAgICAgICAgIGRwLmN1cnJlbnRWaWV3KCkub25LZXlEb3duKGtlLCBkcCk7XG4gICAgICAgIH1cbiAgICB9KTtcblxuICAgIC8vIElmIHRoZSB1c2VyIGNsaWNrcyBpbiBub24tZm9jdXNhYmxlIHNwYWNlLCBidXRcbiAgICAvLyBzdGlsbCB3aXRoaW4gdGhlIGRhdGUgcGlja2VyLCB3ZSBkb24ndCB3YW50IHRvXG4gICAgLy8gaGlkZSwgc28gd2UgbmVlZCB0byBoYWNrIHNvbWUgdGhpbmdzLi4uXG4gICAgb24oJ21vdXNlZG93bicsIGNhbEVsLCBmdW5jdGlvbiAoZSkge1xuICAgICAgICAvL2UudGFyZ2V0LmZvY3VzICYmIGUudGFyZ2V0LmZvY3VzKCk7IC8vIElFIGhhY2tcbiAgICAgICAgaWYgKGRvY3VtZW50LmFjdGl2ZUVsZW1lbnQgIT09IGUudGFyZ2V0KSB7XG4gICAgICAgICAgICBlLnByZXZlbnREZWZhdWx0KCk7XG4gICAgICAgICAgICBmb2N1c0N1cnJlbnQoZHApO1xuICAgICAgICB9XG4gICAgfSk7XG5cbiAgICBvbignY2xpY2snLCBlbCwgb25DbGljayk7XG59XG5cbmZ1bmN0aW9uIGZvY3VzSW5wdXQoaW5wdXQ6IEhUTUxJbnB1dEVsZW1lbnQpIHtcbiAgICAvLyBXaGVuIHRoZSBtb2RhbCBjbG9zZXMsIHdlIG5lZWQgdG8gZm9jdXMgdGhlIG9yaWdpbmFsIGlucHV0IHNvIHRoZVxuICAgIC8vIHVzZXIgY2FuIGNvbnRpbnVlIHRhYmJpbmcgZnJvbSB3aGVyZSB0aGV5IGxlZnQgb2ZmLlxuICAgIGlucHV0LmZvY3VzKCk7XG5cbiAgICAvLyBpT1Mgem9ua3Mgb3V0IGlmIHdlIGRvbid0IGJsdXIgdGhlIGlucHV0LCBzby4uLlxuICAgIGlmICgvaVBhZHxpUGhvbmV8aVBvZC8udGVzdChuYXZpZ2F0b3IudXNlckFnZW50KSAmJiAhd2luZG93Lk1TU3RyZWFtKSB7XG4gICAgICAgIGlucHV0LmJsdXIoKTtcbiAgICB9XG59XG4iXSwibWFwcGluZ3MiOiI7Ozs7O0FBQUE7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQWpLQTtBQW1LQTtBQUNBO0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Iiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/mode/base-mode.ts\n");
+
+/***/ }),
+
+/***/ "./src/mode/dropdown-mode.ts":
+/*!***********************************!*\
+  !*** ./src/mode/dropdown-mode.ts ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Defines the dropdown date picker behavior.\n */\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst base_mode_1 = __importDefault(__webpack_require__(/*! ./base-mode */ \"./src/mode/base-mode.ts\"));\nfunction DropdownMode(input, emit, opts) {\n    const dp = base_mode_1.default(input, emit, opts);\n    dp.shouldFocusOnBlur = false;\n    Object.defineProperty(dp, 'shouldFocusOnRender', {\n        get: function () {\n            return input !== document.activeElement;\n        },\n    });\n    dp.adjustPosition = function () {\n        autoPosition(input, dp, opts.alignment);\n    };\n    return dp;\n}\nexports.default = DropdownMode;\nfunction autoPosition(input, dp, alignment) {\n    const inputPos = input.getBoundingClientRect();\n    const win = window;\n    adjustCalY(dp, inputPos, win);\n    adjustCalX(dp, inputPos, win, alignment);\n    dp.el.style.visibility = '';\n}\nfunction adjustCalX(dp, inputPos, win, alignment) {\n    const cal = dp.el;\n    const scrollLeft = win.pageXOffset;\n    const inputLeft = inputPos.left + scrollLeft;\n    const maxRight = win.innerWidth + scrollLeft;\n    const offsetWidth = cal.offsetWidth;\n    const calRight = inputLeft + offsetWidth;\n    const shiftedLeft = maxRight - offsetWidth;\n    const left = calRight > maxRight && shiftedLeft > 0 ? shiftedLeft : inputLeft;\n    if (alignment === 'right') {\n        cal.style.left = left + (inputPos.width - offsetWidth) + 'px';\n    }\n    else {\n        cal.style.left = left + 'px';\n    }\n}\nfunction adjustCalY(dp, inputPos, win) {\n    const cal = dp.el;\n    const scrollTop = win.pageYOffset;\n    const inputTop = scrollTop + inputPos.top;\n    const calHeight = cal.offsetHeight;\n    const belowTop = inputTop + inputPos.height + 8;\n    const aboveTop = inputTop - calHeight - 8;\n    const isAbove = (aboveTop > 0 && belowTop + calHeight > scrollTop + win.innerHeight);\n    const top = isAbove ? aboveTop : belowTop;\n    if (cal.classList) {\n        cal.classList.toggle('dp-is-above', isAbove);\n        cal.classList.toggle('dp-is-below', !isAbove);\n    }\n    cal.style.top = top + 'px';\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbW9kZS9kcm9wZG93bi1tb2RlLnRzLmpzIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vVGlueURhdGVQaWNrZXIvLi9zcmMvbW9kZS9kcm9wZG93bi1tb2RlLnRzP2JmZTYiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBAZmlsZSBEZWZpbmVzIHRoZSBkcm9wZG93biBkYXRlIHBpY2tlciBiZWhhdmlvci5cbiAqL1xuXG5pbXBvcnQgQmFzZU1vZGUgZnJvbSAnLi9iYXNlLW1vZGUnO1xuaW1wb3J0IHsgSURhdGVQaWNrZXJPcHRpb25zLCBJQWxpZ25tZW50IH0gZnJvbSAnLi4vaW50ZXJmYWNlcyc7XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIERyb3Bkb3duTW9kZShpbnB1dDogSFRNTElucHV0RWxlbWVudCwgZW1pdDogYW55LCBvcHRzOiBJRGF0ZVBpY2tlck9wdGlvbnMpIHtcbiAgICBjb25zdCBkcCA9IEJhc2VNb2RlKGlucHV0LCBlbWl0LCBvcHRzKTtcblxuICAgIGRwLnNob3VsZEZvY3VzT25CbHVyID0gZmFsc2U7XG5cbiAgICBPYmplY3QuZGVmaW5lUHJvcGVydHkoZHAsICdzaG91bGRGb2N1c09uUmVuZGVyJywge1xuICAgICAgICBnZXQ6IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgICAgIHJldHVybiBpbnB1dCAhPT0gZG9jdW1lbnQuYWN0aXZlRWxlbWVudDtcbiAgICAgICAgfSxcbiAgICB9KTtcblxuICAgIGRwLmFkanVzdFBvc2l0aW9uID0gZnVuY3Rpb24gKCkge1xuICAgICAgICBhdXRvUG9zaXRpb24oaW5wdXQsIGRwLCBvcHRzLmFsaWdubWVudCk7XG4gICAgfTtcblxuICAgIHJldHVybiBkcDtcbn1cblxuZnVuY3Rpb24gYXV0b1Bvc2l0aW9uKGlucHV0OiBIVE1MSW5wdXRFbGVtZW50LCBkcDogYW55LCBhbGlnbm1lbnQ6IElBbGlnbm1lbnQpIHtcbiAgICBjb25zdCBpbnB1dFBvcyA9IGlucHV0LmdldEJvdW5kaW5nQ2xpZW50UmVjdCgpO1xuICAgIGNvbnN0IHdpbiA9IHdpbmRvdztcblxuICAgIGFkanVzdENhbFkoZHAsIGlucHV0UG9zLCB3aW4pO1xuICAgIGFkanVzdENhbFgoZHAsIGlucHV0UG9zLCB3aW4sIGFsaWdubWVudCk7XG5cbiAgICBkcC5lbC5zdHlsZS52aXNpYmlsaXR5ID0gJyc7XG59XG5cbmZ1bmN0aW9uIGFkanVzdENhbFgoZHA6IGFueSwgaW5wdXRQb3M6IERPTVJlY3QsIHdpbjogV2luZG93LCBhbGlnbm1lbnQ6IElBbGlnbm1lbnQpIHtcbiAgICBjb25zdCBjYWwgPSBkcC5lbDtcbiAgICBjb25zdCBzY3JvbGxMZWZ0ID0gd2luLnBhZ2VYT2Zmc2V0O1xuICAgIGNvbnN0IGlucHV0TGVmdCA9IGlucHV0UG9zLmxlZnQgKyBzY3JvbGxMZWZ0O1xuICAgIGNvbnN0IG1heFJpZ2h0ID0gd2luLmlubmVyV2lkdGggKyBzY3JvbGxMZWZ0O1xuICAgIGNvbnN0IG9mZnNldFdpZHRoID0gY2FsLm9mZnNldFdpZHRoO1xuICAgIGNvbnN0IGNhbFJpZ2h0ID0gaW5wdXRMZWZ0ICsgb2Zmc2V0V2lkdGg7XG4gICAgY29uc3Qgc2hpZnRlZExlZnQgPSBtYXhSaWdodCAtIG9mZnNldFdpZHRoO1xuICAgIGNvbnN0IGxlZnQgPSBjYWxSaWdodCA+IG1heFJpZ2h0ICYmIHNoaWZ0ZWRMZWZ0ID4gMCA/IHNoaWZ0ZWRMZWZ0IDogaW5wdXRMZWZ0O1xuXG4gICAgaWYgKGFsaWdubWVudCA9PT0gJ3JpZ2h0Jykge1xuICAgICAgICBjYWwuc3R5bGUubGVmdCA9IGxlZnQgKyAoaW5wdXRQb3Mud2lkdGggLSBvZmZzZXRXaWR0aCkgKyAncHgnO1xuICAgIH0gZWxzZSB7XG4gICAgICAgIGNhbC5zdHlsZS5sZWZ0ID0gbGVmdCArICdweCc7XG4gICAgfVxufVxuXG5mdW5jdGlvbiBhZGp1c3RDYWxZKGRwOiBhbnksIGlucHV0UG9zOiBET01SZWN0LCB3aW46IFdpbmRvdykge1xuICAgIGNvbnN0IGNhbCA9IGRwLmVsO1xuICAgIGNvbnN0IHNjcm9sbFRvcCA9IHdpbi5wYWdlWU9mZnNldDtcbiAgICBjb25zdCBpbnB1dFRvcCA9IHNjcm9sbFRvcCArIGlucHV0UG9zLnRvcDtcbiAgICBjb25zdCBjYWxIZWlnaHQgPSBjYWwub2Zmc2V0SGVpZ2h0O1xuICAgIGNvbnN0IGJlbG93VG9wID0gaW5wdXRUb3AgKyBpbnB1dFBvcy5oZWlnaHQgKyA4O1xuICAgIGNvbnN0IGFib3ZlVG9wID0gaW5wdXRUb3AgLSBjYWxIZWlnaHQgLSA4O1xuICAgIGNvbnN0IGlzQWJvdmUgPSAoYWJvdmVUb3AgPiAwICYmIGJlbG93VG9wICsgY2FsSGVpZ2h0ID4gc2Nyb2xsVG9wICsgd2luLmlubmVySGVpZ2h0KTtcbiAgICBjb25zdCB0b3AgPSBpc0Fib3ZlID8gYWJvdmVUb3AgOiBiZWxvd1RvcDtcblxuICAgIGlmIChjYWwuY2xhc3NMaXN0KSB7XG4gICAgICAgIGNhbC5jbGFzc0xpc3QudG9nZ2xlKCdkcC1pcy1hYm92ZScsIGlzQWJvdmUpO1xuICAgICAgICBjYWwuY2xhc3NMaXN0LnRvZ2dsZSgnZHAtaXMtYmVsb3cnLCAhaXNBYm92ZSk7XG4gICAgfVxuICAgIGNhbC5zdHlsZS50b3AgPSB0b3AgKyAncHgnO1xufVxuIl0sIm1hcHBpbmdzIjoiO0FBQUE7O0FBRUE7Ozs7O0FBRUE7QUFHQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQWhCQTtBQWtCQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOyIsInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/mode/dropdown-mode.ts\n");
+
+/***/ }),
+
+/***/ "./src/mode/index.ts":
+/*!***************************!*\
+  !*** ./src/mode/index.ts ***!
+  \***************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Defines the various date picker modes (modal, dropdown, permanent)\n */\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst modal_mode_1 = __importDefault(__webpack_require__(/*! ./modal-mode */ \"./src/mode/modal-mode.ts\"));\nconst dropdown_mode_1 = __importDefault(__webpack_require__(/*! ./dropdown-mode */ \"./src/mode/dropdown-mode.ts\"));\nconst permanent_mode_1 = __importDefault(__webpack_require__(/*! ./permanent-mode */ \"./src/mode/permanent-mode.ts\"));\nfunction Mode(input, emit, opts) {\n    const el = input instanceof HTMLInputElement ? input : document.querySelector(input);\n    if (!el) {\n        throw new Error(`The provided input '${input}' could not be found.`);\n    }\n    switch (opts.mode) {\n        case 'dp-modal':\n            return modal_mode_1.default(el, emit, opts);\n        case 'dp-below':\n            return dropdown_mode_1.default(el, emit, opts);\n        case 'dp-permanent':\n            return permanent_mode_1.default(el, emit, opts);\n        default:\n            throw new Error(`Unknown mode: '${opts.mode}`);\n    }\n}\nexports.default = Mode;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbW9kZS9pbmRleC50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL21vZGUvaW5kZXgudHM/NjczMSJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIERlZmluZXMgdGhlIHZhcmlvdXMgZGF0ZSBwaWNrZXIgbW9kZXMgKG1vZGFsLCBkcm9wZG93biwgcGVybWFuZW50KVxuICovXG5cbmltcG9ydCBNb2RhbE1vZGUgZnJvbSAnLi9tb2RhbC1tb2RlJztcbmltcG9ydCBEcm9wZG93bk1vZGUgZnJvbSAnLi9kcm9wZG93bi1tb2RlJztcbmltcG9ydCBQZXJtYW5lbnRNb2RlIGZyb20gJy4vcGVybWFuZW50LW1vZGUnO1xuaW1wb3J0IHsgSURhdGVQaWNrZXJPcHRpb25zIH0gZnJvbSAnLi4vaW50ZXJmYWNlcyc7XG5cblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gTW9kZShpbnB1dDogSFRNTElucHV0RWxlbWVudCB8IHN0cmluZywgZW1pdDogYW55LCBvcHRzOiBJRGF0ZVBpY2tlck9wdGlvbnMpIHtcbiAgICBjb25zdCBlbCA9IGlucHV0IGluc3RhbmNlb2YgSFRNTElucHV0RWxlbWVudCA/IGlucHV0IDogZG9jdW1lbnQucXVlcnlTZWxlY3RvcihpbnB1dClcblxuICAgIGlmICghZWwpIHtcbiAgICAgICAgdGhyb3cgbmV3IEVycm9yKGBUaGUgcHJvdmlkZWQgaW5wdXQgJyR7aW5wdXR9JyBjb3VsZCBub3QgYmUgZm91bmQuYClcbiAgICB9XG5cbiAgICBzd2l0Y2gob3B0cy5tb2RlKSB7XG4gICAgICAgIGNhc2UgJ2RwLW1vZGFsJzpcbiAgICAgICAgICAgIHJldHVybiBNb2RhbE1vZGUoZWwgYXMgSFRNTElucHV0RWxlbWVudCwgZW1pdCwgb3B0cyk7XG4gICAgICAgIFxuICAgICAgICBjYXNlICdkcC1iZWxvdyc6XG4gICAgICAgICAgICByZXR1cm4gRHJvcGRvd25Nb2RlKGVsIGFzIEhUTUxJbnB1dEVsZW1lbnQsIGVtaXQsIG9wdHMpO1xuXG4gICAgICAgIGNhc2UgJ2RwLXBlcm1hbmVudCc6XG4gICAgICAgICAgICByZXR1cm4gUGVybWFuZW50TW9kZShlbCBhcyBIVE1MSW5wdXRFbGVtZW50LCBlbWl0LCBvcHRzKTtcbiAgICAgICAgXG4gICAgICAgIGRlZmF1bHQ6XG4gICAgICAgICAgICB0aHJvdyBuZXcgRXJyb3IoYFVua25vd24gbW9kZTogJyR7b3B0cy5tb2RlfWApXG5cbiAgICB9XG59XG4iXSwibWFwcGluZ3MiOiI7QUFBQTs7QUFFQTs7Ozs7QUFFQTtBQUNBO0FBQ0E7QUFJQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQXJCQTsiLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/mode/index.ts\n");
+
+/***/ }),
+
+/***/ "./src/mode/modal-mode.ts":
+/*!********************************!*\
+  !*** ./src/mode/modal-mode.ts ***!
+  \********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\n/**\n * @file Defines the modal date picker behavior.\n */\nconst base_mode_1 = __importDefault(__webpack_require__(/*! ./base-mode */ \"./src/mode/base-mode.ts\"));\nfunction ModalMode(input, emit, opts) {\n    const dp = base_mode_1.default(input, emit, opts);\n    // In modal mode, users really shouldn't be able to type in\n    // the input, as all input is done via the calendar.\n    input.readOnly = true;\n    // In modal mode, we need to know when the user has tabbed\n    // off the end of the calendar, and set focus to the original\n    // input. To do this, we add a special element to the DOM.\n    // When the user tabs off the bottom of the calendar, they\n    // will tab onto this element.\n    dp.containerHTML += '<a href=\"#\" class=\"dp-focuser\">.</a>';\n    return dp;\n}\nexports.default = ModalMode;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbW9kZS9tb2RhbC1tb2RlLnRzLmpzIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vVGlueURhdGVQaWNrZXIvLi9zcmMvbW9kZS9tb2RhbC1tb2RlLnRzPzVmMzUiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBAZmlsZSBEZWZpbmVzIHRoZSBtb2RhbCBkYXRlIHBpY2tlciBiZWhhdmlvci5cbiAqL1xuaW1wb3J0IEJhc2VNb2RlIGZyb20gJy4vYmFzZS1tb2RlJztcbmltcG9ydCB7IElEYXRlUGlja2VyT3B0aW9ucyB9IGZyb20gJy4uL2ludGVyZmFjZXMnO1xuXG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIE1vZGFsTW9kZShpbnB1dDogSFRNTElucHV0RWxlbWVudCwgZW1pdDogYW55LCBvcHRzOiBJRGF0ZVBpY2tlck9wdGlvbnMpIHtcbiAgICBjb25zdCBkcCA9IEJhc2VNb2RlKGlucHV0LCBlbWl0LCBvcHRzKTtcblxuICAgIC8vIEluIG1vZGFsIG1vZGUsIHVzZXJzIHJlYWxseSBzaG91bGRuJ3QgYmUgYWJsZSB0byB0eXBlIGluXG4gICAgLy8gdGhlIGlucHV0LCBhcyBhbGwgaW5wdXQgaXMgZG9uZSB2aWEgdGhlIGNhbGVuZGFyLlxuICAgIGlucHV0LnJlYWRPbmx5ID0gdHJ1ZTtcblxuICAgIC8vIEluIG1vZGFsIG1vZGUsIHdlIG5lZWQgdG8ga25vdyB3aGVuIHRoZSB1c2VyIGhhcyB0YWJiZWRcbiAgICAvLyBvZmYgdGhlIGVuZCBvZiB0aGUgY2FsZW5kYXIsIGFuZCBzZXQgZm9jdXMgdG8gdGhlIG9yaWdpbmFsXG4gICAgLy8gaW5wdXQuIFRvIGRvIHRoaXMsIHdlIGFkZCBhIHNwZWNpYWwgZWxlbWVudCB0byB0aGUgRE9NLlxuICAgIC8vIFdoZW4gdGhlIHVzZXIgdGFicyBvZmYgdGhlIGJvdHRvbSBvZiB0aGUgY2FsZW5kYXIsIHRoZXlcbiAgICAvLyB3aWxsIHRhYiBvbnRvIHRoaXMgZWxlbWVudC5cbiAgICBkcC5jb250YWluZXJIVE1MICs9ICc8YSBocmVmPVwiI1wiIGNsYXNzPVwiZHAtZm9jdXNlclwiPi48L2E+JztcblxuICAgIHJldHVybiBkcDtcbn1cbiJdLCJtYXBwaW5ncyI6Ijs7Ozs7QUFBQTs7QUFFQTtBQUNBO0FBSUE7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFmQTsiLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/mode/modal-mode.ts\n");
+
+/***/ }),
+
+/***/ "./src/mode/permanent-mode.ts":
+/*!************************************!*\
+  !*** ./src/mode/permanent-mode.ts ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\nvar __importDefault = (this && this.__importDefault) || function (mod) {\n    return (mod && mod.__esModule) ? mod : { \"default\": mod };\n};\nObject.defineProperty(exports, \"__esModule\", { value: true });\n/**\n * @file Defines the permanent date picker behavior.\n */\nconst fns_1 = __webpack_require__(/*! ../lib/fns */ \"./src/lib/fns.ts\");\nconst base_mode_1 = __importDefault(__webpack_require__(/*! ./base-mode */ \"./src/mode/base-mode.ts\"));\nfunction PermanentMode(root, emit, opts) {\n    const dp = base_mode_1.default(root, emit, opts);\n    dp.close = fns_1.noop;\n    dp.updateInput = fns_1.noop;\n    dp.shouldFocusOnRender = opts.shouldFocusOnRender || false;\n    dp.computeSelectedDate = function () {\n        return opts.hilightedDate;\n    };\n    dp.attachToDom = function () {\n        if (dp.el) {\n            root.appendChild(dp.el);\n        }\n    };\n    dp.open();\n    return dp;\n}\nexports.default = PermanentMode;\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvbW9kZS9wZXJtYW5lbnQtbW9kZS50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL21vZGUvcGVybWFuZW50LW1vZGUudHM/N2RkZCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIERlZmluZXMgdGhlIHBlcm1hbmVudCBkYXRlIHBpY2tlciBiZWhhdmlvci5cbiAqL1xuaW1wb3J0IHsgbm9vcCB9IGZyb20gJy4uL2xpYi9mbnMnO1xuaW1wb3J0IEJhc2VNb2RlIGZyb20gJy4vYmFzZS1tb2RlJztcbmltcG9ydCB7IElEYXRlUGlja2VyT3B0aW9ucyB9IGZyb20gJy4uL2ludGVyZmFjZXMnO1xuXG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIFBlcm1hbmVudE1vZGUocm9vdDogSFRNTElucHV0RWxlbWVudCwgZW1pdDogYW55LCBvcHRzOiBJRGF0ZVBpY2tlck9wdGlvbnMpIHtcbiAgICBjb25zdCBkcCA9IEJhc2VNb2RlKHJvb3QsIGVtaXQsIG9wdHMpO1xuXG4gICAgZHAuY2xvc2UgPSBub29wO1xuICAgIGRwLnVwZGF0ZUlucHV0ID0gbm9vcDtcbiAgICBkcC5zaG91bGRGb2N1c09uUmVuZGVyID0gb3B0cy5zaG91bGRGb2N1c09uUmVuZGVyIHx8IGZhbHNlO1xuXG4gICAgZHAuY29tcHV0ZVNlbGVjdGVkRGF0ZSA9IGZ1bmN0aW9uICgpIHtcbiAgICAgICAgcmV0dXJuIG9wdHMuaGlsaWdodGVkRGF0ZTtcbiAgICB9O1xuXG4gICAgZHAuYXR0YWNoVG9Eb20gPSBmdW5jdGlvbiAoKSB7XG4gICAgICAgIGlmIChkcC5lbCkge1xuICAgICAgICAgICAgcm9vdC5hcHBlbmRDaGlsZChkcC5lbCk7XG4gICAgICAgIH1cbiAgICB9O1xuXG4gICAgZHAub3BlbigpO1xuXG4gICAgcmV0dXJuIGRwO1xufVxuIl0sIm1hcHBpbmdzIjoiOzs7OztBQUFBOztBQUVBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBcEJBOyIsInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/mode/permanent-mode.ts\n");
+
+/***/ }),
+
+/***/ "./src/views/day-picker.ts":
+/*!*********************************!*\
+  !*** ./src/views/day-picker.ts ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Manages the calendar / day-picker view.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst dom_1 = __webpack_require__(/*! ../lib/dom */ \"./src/lib/dom.ts\");\nconst date_manip_1 = __webpack_require__(/*! ../lib/date-manip */ \"./src/lib/date-manip.ts\");\nexports.default = {\n    onKeyDown: keyDown,\n    onClick: {\n        'dp-day': selectDay,\n        'dp-next': gotoNextMonth,\n        'dp-prev': gotoPrevMonth,\n        'dp-today': selectToday,\n        'dp-clear': clear,\n        'dp-close': close,\n        'dp-cal-month': showMonthPicker,\n        'dp-cal-year': showYearPicker,\n    },\n    render: render\n};\n/**\n * view renders the calendar (day picker) as an HTML string.\n *\n * @param {DatePickerContext} context the date picker being rendered\n * @returns {string}\n */\nfunction render(dp) {\n    const opts = dp.opts;\n    const lang = opts.lang;\n    const state = dp.state;\n    const dayNames = lang.days;\n    const dayOffset = opts.dayOffset || 0;\n    const selectedDate = state.selectedDate;\n    const hilightedDate = state.hilightedDate;\n    const hilightedMonth = hilightedDate.getMonth();\n    const today = date_manip_1.now().getTime();\n    return ('<div class=\"dp-cal\">' +\n        '<header class=\"dp-cal-header\">' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-prev\">Prev</button>' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-cal-month\">' +\n        lang.months[hilightedMonth] +\n        '</button>' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-cal-year\">' +\n        hilightedDate.getFullYear() +\n        '</button>' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-next\">Next</button>' +\n        '</header>' +\n        '<div class=\"dp-days\">' +\n        dayNames.map(function (name, i) {\n            return ('<span class=\"dp-col-header\">' + dayNames[(i + dayOffset) % dayNames.length] + '</span>');\n        }).join('') +\n        mapDays(hilightedDate, dayOffset, function (date) {\n            const isNotInMonth = date.getMonth() !== hilightedMonth;\n            const isDisabled = !opts.inRange(date);\n            const isToday = date.getTime() === today;\n            let className = 'dp-day';\n            className += (isNotInMonth ? ' dp-edge-day' : '');\n            className += (date_manip_1.datesEq(date, hilightedDate) ? ' dp-current' : '');\n            className += (date_manip_1.datesEq(date, selectedDate) ? ' dp-selected' : '');\n            className += (isDisabled ? ' dp-day-disabled' : '');\n            className += (isToday ? ' dp-day-today' : '');\n            className += ' ' + opts.dateClass(date);\n            return ('<button tabindex=\"-1\" type=\"button\" class=\"' + className + '\" data-date=\"' + date.getTime() + '\">' +\n                date.getDate() +\n                '</button>');\n        }) +\n        '</div>' +\n        '<footer class=\"dp-cal-footer\">' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-today\">' + lang.today + '</button>' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-clear\">' + lang.clear + '</button>' +\n        '<button tabindex=\"-1\" type=\"button\" class=\"dp-close\">' + lang.close + '</button>' +\n        '</footer>' +\n        '</div>');\n}\n/**\n * keyDown handles the key down event for the day-picker\n *\n * @param {Event} e\n * @param {DatePickerContext} dp\n */\nfunction keyDown(e, dp) {\n    const key = e.code || e.keyCode;\n    const shiftBy = (key === dom_1.Key.left) ? -1 :\n        (key === dom_1.Key.right) ? 1 :\n            (key === dom_1.Key.up) ? -7 :\n                (key === dom_1.Key.down) ? 7 :\n                    0;\n    if (key === dom_1.Key.esc) {\n        dp.close();\n    }\n    else if (shiftBy) {\n        e.preventDefault();\n        dp.setState({\n            hilightedDate: date_manip_1.shiftDay(dp.state.hilightedDate, shiftBy)\n        });\n    }\n}\nfunction selectToday(e, dp) {\n    dp.setState({\n        selectedDate: date_manip_1.now(),\n    });\n}\nfunction clear(e, dp) {\n    dp.setState({\n        selectedDate: null,\n    });\n}\nfunction close(e, dp) {\n    dp.close();\n}\nfunction showMonthPicker(e, dp) {\n    dp.setState({\n        view: 'month'\n    });\n}\nfunction showYearPicker(e, dp) {\n    dp.setState({\n        view: 'year'\n    });\n}\nfunction gotoNextMonth(e, dp) {\n    const hilightedDate = dp.state.hilightedDate;\n    dp.setState({\n        hilightedDate: date_manip_1.shiftMonth(hilightedDate, 1)\n    });\n}\nfunction gotoPrevMonth(e, dp) {\n    const hilightedDate = dp.state.hilightedDate;\n    dp.setState({\n        hilightedDate: date_manip_1.shiftMonth(hilightedDate, -1)\n    });\n}\nfunction selectDay(e, dp) {\n    if (!e.target) {\n        return;\n    }\n    const evTarget = e.target;\n    dp.setState({\n        selectedDate: new Date(parseInt(evTarget.getAttribute('data-date'))),\n    });\n}\nfunction mapDays(currentDate, dayOffset, fn) {\n    let result = '';\n    const iter = new Date(currentDate);\n    iter.setDate(1);\n    iter.setDate(1 - iter.getDay() + dayOffset);\n    // If we are showing monday as the 1st of the week,\n    // and the monday is the 2nd of the month, the sunday won't\n    // show, so we need to shift backwards\n    if (dayOffset && iter.getDate() === dayOffset + 1) {\n        iter.setDate(dayOffset - 6);\n    }\n    // We are going to have 6 weeks always displayed to keep a consistent\n    // calendar size\n    for (let day = 0; day < (6 * 7); ++day) {\n        result += fn(iter);\n        iter.setDate(iter.getDate() + 1);\n    }\n    return result;\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvdmlld3MvZGF5LXBpY2tlci50cy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovL1RpbnlEYXRlUGlja2VyLy4vc3JjL3ZpZXdzL2RheS1waWNrZXIudHM/OTVmYiJdLCJzb3VyY2VzQ29udGVudCI6WyIvKipcbiAqIEBmaWxlIE1hbmFnZXMgdGhlIGNhbGVuZGFyIC8gZGF5LXBpY2tlciB2aWV3LlxuICovXG5cbmltcG9ydCB7S2V5fSBmcm9tICcuLi9saWIvZG9tJztcbmltcG9ydCB7bm93LCBkYXRlc0VxLCBzaGlmdE1vbnRoLCBzaGlmdERheX0gZnJvbSAnLi4vbGliL2RhdGUtbWFuaXAnO1xuaW1wb3J0IHsgSURhdGVQaWNrZXIsIElQaWNrZXIgfSBmcm9tICcuLi9pbnRlcmZhY2VzJztcblxuZXhwb3J0IGRlZmF1bHQge1xuICBvbktleURvd246IGtleURvd24sXG4gIG9uQ2xpY2s6IHtcbiAgICAnZHAtZGF5Jzogc2VsZWN0RGF5LFxuICAgICdkcC1uZXh0JzogZ290b05leHRNb250aCxcbiAgICAnZHAtcHJldic6IGdvdG9QcmV2TW9udGgsXG4gICAgJ2RwLXRvZGF5Jzogc2VsZWN0VG9kYXksXG4gICAgJ2RwLWNsZWFyJzogY2xlYXIsXG4gICAgJ2RwLWNsb3NlJzogY2xvc2UsXG4gICAgJ2RwLWNhbC1tb250aCc6IHNob3dNb250aFBpY2tlcixcbiAgICAnZHAtY2FsLXllYXInOiBzaG93WWVhclBpY2tlcixcbiAgfSxcbiAgcmVuZGVyOiByZW5kZXJcbn0gYXMgSVBpY2tlclxuXG4vKipcbiAqIHZpZXcgcmVuZGVycyB0aGUgY2FsZW5kYXIgKGRheSBwaWNrZXIpIGFzIGFuIEhUTUwgc3RyaW5nLlxuICpcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlckNvbnRleHR9IGNvbnRleHQgdGhlIGRhdGUgcGlja2VyIGJlaW5nIHJlbmRlcmVkXG4gKiBAcmV0dXJucyB7c3RyaW5nfVxuICovXG5mdW5jdGlvbiByZW5kZXIoZHA6IElEYXRlUGlja2VyKSB7XG4gIGNvbnN0IG9wdHMgPSBkcC5vcHRzO1xuICBjb25zdCBsYW5nID0gb3B0cy5sYW5nO1xuICBjb25zdCBzdGF0ZSA9IGRwLnN0YXRlO1xuICBjb25zdCBkYXlOYW1lcyA9IGxhbmcuZGF5cztcbiAgY29uc3QgZGF5T2Zmc2V0ID0gb3B0cy5kYXlPZmZzZXQgfHwgMDtcbiAgY29uc3Qgc2VsZWN0ZWREYXRlID0gc3RhdGUuc2VsZWN0ZWREYXRlO1xuICBjb25zdCBoaWxpZ2h0ZWREYXRlID0gc3RhdGUuaGlsaWdodGVkRGF0ZTtcbiAgY29uc3QgaGlsaWdodGVkTW9udGggPSBoaWxpZ2h0ZWREYXRlIS5nZXRNb250aCgpO1xuICBjb25zdCB0b2RheSA9IG5vdygpLmdldFRpbWUoKTtcblxuICByZXR1cm4gKFxuICAgICc8ZGl2IGNsYXNzPVwiZHAtY2FsXCI+JyArXG4gICAgICAnPGhlYWRlciBjbGFzcz1cImRwLWNhbC1oZWFkZXJcIj4nICtcbiAgICAgICAgJzxidXR0b24gdGFiaW5kZXg9XCItMVwiIHR5cGU9XCJidXR0b25cIiBjbGFzcz1cImRwLXByZXZcIj5QcmV2PC9idXR0b24+JyArXG4gICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCJkcC1jYWwtbW9udGhcIj4nICtcbiAgICAgICAgICBsYW5nLm1vbnRoc1toaWxpZ2h0ZWRNb250aF0gK1xuICAgICAgICAnPC9idXR0b24+JyArXG4gICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCJkcC1jYWwteWVhclwiPicgK1xuICAgICAgICAgIGhpbGlnaHRlZERhdGUhLmdldEZ1bGxZZWFyKCkgK1xuICAgICAgICAnPC9idXR0b24+JyArXG4gICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCJkcC1uZXh0XCI+TmV4dDwvYnV0dG9uPicgK1xuICAgICAgJzwvaGVhZGVyPicgK1xuICAgICAgJzxkaXYgY2xhc3M9XCJkcC1kYXlzXCI+JyArXG4gICAgICAgIGRheU5hbWVzLm1hcChmdW5jdGlvbiAobmFtZTogc3RyaW5nLCBpOiBudW1iZXIpIHtcbiAgICAgICAgICByZXR1cm4gKFxuICAgICAgICAgICAgJzxzcGFuIGNsYXNzPVwiZHAtY29sLWhlYWRlclwiPicgKyBkYXlOYW1lc1soaSArIGRheU9mZnNldCkgJSBkYXlOYW1lcy5sZW5ndGhdICsgJzwvc3Bhbj4nXG4gICAgICAgICAgKTtcbiAgICAgICAgfSkuam9pbignJykgK1xuICAgICAgICBtYXBEYXlzKGhpbGlnaHRlZERhdGUhLCBkYXlPZmZzZXQsIGZ1bmN0aW9uIChkYXRlKSB7XG4gICAgICAgICAgY29uc3QgaXNOb3RJbk1vbnRoID0gZGF0ZS5nZXRNb250aCgpICE9PSBoaWxpZ2h0ZWRNb250aDtcbiAgICAgICAgICBjb25zdCBpc0Rpc2FibGVkID0gIW9wdHMuaW5SYW5nZShkYXRlKTtcbiAgICAgICAgICBjb25zdCBpc1RvZGF5ID0gZGF0ZS5nZXRUaW1lKCkgPT09IHRvZGF5O1xuICAgICAgICAgIGxldCBjbGFzc05hbWUgPSAnZHAtZGF5JztcbiAgICAgICAgICBjbGFzc05hbWUgKz0gKGlzTm90SW5Nb250aCA/ICcgZHAtZWRnZS1kYXknIDogJycpO1xuICAgICAgICAgIGNsYXNzTmFtZSArPSAoZGF0ZXNFcShkYXRlLCBoaWxpZ2h0ZWREYXRlKSA/ICcgZHAtY3VycmVudCcgOiAnJyk7XG4gICAgICAgICAgY2xhc3NOYW1lICs9IChkYXRlc0VxKGRhdGUsIHNlbGVjdGVkRGF0ZSkgPyAnIGRwLXNlbGVjdGVkJyA6ICcnKTtcbiAgICAgICAgICBjbGFzc05hbWUgKz0gKGlzRGlzYWJsZWQgPyAnIGRwLWRheS1kaXNhYmxlZCcgOiAnJyk7XG4gICAgICAgICAgY2xhc3NOYW1lICs9IChpc1RvZGF5ID8gJyBkcC1kYXktdG9kYXknIDogJycpO1xuICAgICAgICAgIGNsYXNzTmFtZSArPSAnICcgKyBvcHRzLmRhdGVDbGFzcyhkYXRlKTtcblxuICAgICAgICAgIHJldHVybiAoXG4gICAgICAgICAgICAnPGJ1dHRvbiB0YWJpbmRleD1cIi0xXCIgdHlwZT1cImJ1dHRvblwiIGNsYXNzPVwiJyArIGNsYXNzTmFtZSArICdcIiBkYXRhLWRhdGU9XCInICsgZGF0ZS5nZXRUaW1lKCkgKyAnXCI+JyArXG4gICAgICAgICAgICAgIGRhdGUuZ2V0RGF0ZSgpICtcbiAgICAgICAgICAgICc8L2J1dHRvbj4nXG4gICAgICAgICAgKTtcbiAgICAgICAgfSkgK1xuICAgICAgJzwvZGl2PicgK1xuICAgICAgJzxmb290ZXIgY2xhc3M9XCJkcC1jYWwtZm9vdGVyXCI+JyArXG4gICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCJkcC10b2RheVwiPicgKyBsYW5nLnRvZGF5ICsgJzwvYnV0dG9uPicgK1xuICAgICAgICAnPGJ1dHRvbiB0YWJpbmRleD1cIi0xXCIgdHlwZT1cImJ1dHRvblwiIGNsYXNzPVwiZHAtY2xlYXJcIj4nICsgbGFuZy5jbGVhciArICc8L2J1dHRvbj4nICtcbiAgICAgICAgJzxidXR0b24gdGFiaW5kZXg9XCItMVwiIHR5cGU9XCJidXR0b25cIiBjbGFzcz1cImRwLWNsb3NlXCI+JyArIGxhbmcuY2xvc2UgKyAnPC9idXR0b24+JyArXG4gICAgICAnPC9mb290ZXI+JyArXG4gICAgJzwvZGl2PidcbiAgKTtcbn1cblxuLyoqXG4gKiBrZXlEb3duIGhhbmRsZXMgdGhlIGtleSBkb3duIGV2ZW50IGZvciB0aGUgZGF5LXBpY2tlclxuICpcbiAqIEBwYXJhbSB7RXZlbnR9IGVcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlckNvbnRleHR9IGRwXG4gKi9cbmZ1bmN0aW9uIGtleURvd24oZTogS2V5Ym9hcmRFdmVudCwgZHA6IGFueSkge1xuICBjb25zdCBrZXkgPSBlLmNvZGUgfHwgZS5rZXlDb2RlO1xuICBjb25zdCBzaGlmdEJ5ID1cbiAgICAoa2V5ID09PSBLZXkubGVmdCkgPyAtMSA6XG4gICAgKGtleSA9PT0gS2V5LnJpZ2h0KSA/IDEgOlxuICAgIChrZXkgPT09IEtleS51cCkgPyAtNyA6XG4gICAgKGtleSA9PT0gS2V5LmRvd24pID8gNyA6XG4gICAgMDtcblxuICBpZiAoa2V5ID09PSBLZXkuZXNjKSB7XG4gICAgZHAuY2xvc2UoKTtcbiAgfSBlbHNlIGlmIChzaGlmdEJ5KSB7XG4gICAgZS5wcmV2ZW50RGVmYXVsdCgpO1xuICAgIGRwLnNldFN0YXRlKHtcbiAgICAgIGhpbGlnaHRlZERhdGU6IHNoaWZ0RGF5KGRwLnN0YXRlLmhpbGlnaHRlZERhdGUsIHNoaWZ0QnkpXG4gICAgfSk7XG4gIH1cbn1cblxuZnVuY3Rpb24gc2VsZWN0VG9kYXkoZTogRXZlbnQsIGRwOiBhbnkpIHtcbiAgZHAuc2V0U3RhdGUoe1xuICAgIHNlbGVjdGVkRGF0ZTogbm93KCksXG4gIH0pO1xufVxuXG5mdW5jdGlvbiBjbGVhcihlOiBFdmVudCwgZHA6IGFueSkge1xuICBkcC5zZXRTdGF0ZSh7XG4gICAgc2VsZWN0ZWREYXRlOiBudWxsLFxuICB9KTtcbn1cblxuZnVuY3Rpb24gY2xvc2UoZTogRXZlbnQsIGRwOiBhbnkpIHtcbiAgZHAuY2xvc2UoKTtcbn1cblxuZnVuY3Rpb24gc2hvd01vbnRoUGlja2VyKGU6IEV2ZW50LCBkcDogYW55KSB7XG4gIGRwLnNldFN0YXRlKHtcbiAgICB2aWV3OiAnbW9udGgnXG4gIH0pO1xufVxuXG5mdW5jdGlvbiBzaG93WWVhclBpY2tlcihlOiBFdmVudCwgZHA6IGFueSkge1xuICBkcC5zZXRTdGF0ZSh7XG4gICAgdmlldzogJ3llYXInXG4gIH0pO1xufVxuXG5mdW5jdGlvbiBnb3RvTmV4dE1vbnRoKGU6IEV2ZW50LCBkcDogYW55KSB7XG4gIGNvbnN0IGhpbGlnaHRlZERhdGUgPSBkcC5zdGF0ZS5oaWxpZ2h0ZWREYXRlO1xuICBkcC5zZXRTdGF0ZSh7XG4gICAgaGlsaWdodGVkRGF0ZTogc2hpZnRNb250aChoaWxpZ2h0ZWREYXRlLCAxKVxuICB9KTtcbn1cblxuZnVuY3Rpb24gZ290b1ByZXZNb250aChlOiBFdmVudCwgZHA6IGFueSkge1xuICBjb25zdCBoaWxpZ2h0ZWREYXRlID0gZHAuc3RhdGUuaGlsaWdodGVkRGF0ZTtcbiAgZHAuc2V0U3RhdGUoe1xuICAgIGhpbGlnaHRlZERhdGU6IHNoaWZ0TW9udGgoaGlsaWdodGVkRGF0ZSwgLTEpXG4gIH0pO1xufVxuXG5mdW5jdGlvbiBzZWxlY3REYXkoZTogS2V5Ym9hcmRFdmVudCwgZHA6IGFueSkge1xuICBpZiAoIWUudGFyZ2V0KSB7XG4gICAgcmV0dXJuXG4gIH1cbiAgXG4gIGNvbnN0IGV2VGFyZ2V0ID0gZS50YXJnZXQgYXMgSFRNTEVsZW1lbnRcbiAgXG4gIGRwLnNldFN0YXRlKHtcbiAgICBzZWxlY3RlZERhdGU6IG5ldyBEYXRlKHBhcnNlSW50KGV2VGFyZ2V0LmdldEF0dHJpYnV0ZSgnZGF0YS1kYXRlJykgYXMgc3RyaW5nKSksXG4gIH0pO1xufVxuXG5mdW5jdGlvbiBtYXBEYXlzKGN1cnJlbnREYXRlOiBEYXRlLCBkYXlPZmZzZXQ6IG51bWJlciwgZm46IChpdGVyOiBEYXRlKSA9PiBzdHJpbmcpIHtcbiAgbGV0IHJlc3VsdCA9ICcnO1xuICBjb25zdCBpdGVyID0gbmV3IERhdGUoY3VycmVudERhdGUpO1xuICBpdGVyLnNldERhdGUoMSk7XG4gIGl0ZXIuc2V0RGF0ZSgxIC0gaXRlci5nZXREYXkoKSArIGRheU9mZnNldCk7XG5cbiAgLy8gSWYgd2UgYXJlIHNob3dpbmcgbW9uZGF5IGFzIHRoZSAxc3Qgb2YgdGhlIHdlZWssXG4gIC8vIGFuZCB0aGUgbW9uZGF5IGlzIHRoZSAybmQgb2YgdGhlIG1vbnRoLCB0aGUgc3VuZGF5IHdvbid0XG4gIC8vIHNob3csIHNvIHdlIG5lZWQgdG8gc2hpZnQgYmFja3dhcmRzXG4gIGlmIChkYXlPZmZzZXQgJiYgaXRlci5nZXREYXRlKCkgPT09IGRheU9mZnNldCArIDEpIHtcbiAgICBpdGVyLnNldERhdGUoZGF5T2Zmc2V0IC0gNik7XG4gIH1cblxuICAvLyBXZSBhcmUgZ29pbmcgdG8gaGF2ZSA2IHdlZWtzIGFsd2F5cyBkaXNwbGF5ZWQgdG8ga2VlcCBhIGNvbnNpc3RlbnRcbiAgLy8gY2FsZW5kYXIgc2l6ZVxuICBmb3IgKGxldCBkYXkgPSAwOyBkYXkgPCAoNiAqIDcpOyArK2RheSkge1xuICAgIHJlc3VsdCArPSBmbihpdGVyKTtcbiAgICBpdGVyLnNldERhdGUoaXRlci5nZXREYXRlKCkgKyAxKTtcbiAgfVxuXG4gIHJldHVybiByZXN1bHQ7XG59XG4iXSwibWFwcGluZ3MiOiI7QUFBQTs7QUFFQTs7QUFFQTtBQUNBO0FBR0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBOzs7OztBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBR0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBRUE7Ozs7O0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBOyIsInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/views/day-picker.ts\n");
+
+/***/ }),
+
+/***/ "./src/views/month-picker.ts":
+/*!***********************************!*\
+  !*** ./src/views/month-picker.ts ***!
+  \***********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Manages the month-picker view.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst dom_1 = __webpack_require__(/*! ../lib/dom */ \"./src/lib/dom.ts\");\nconst date_manip_1 = __webpack_require__(/*! ../lib/date-manip */ \"./src/lib/date-manip.ts\");\nexports.default = {\n    onKeyDown: keyDown,\n    onClick: {\n        'dp-month': onChooseMonth\n    },\n    render: render\n};\nfunction onChooseMonth(e, dp) {\n    dp.setState({\n        hilightedDate: date_manip_1.setMonth(dp.state.hilightedDate, parseInt(e.target.getAttribute('data-month'))),\n        view: 'day',\n    });\n}\n/**\n * render renders the month picker as an HTML string\n *\n * @param {DatePickerContext} dp the date picker context\n * @returns {string}\n */\nfunction render(dp) {\n    const opts = dp.opts;\n    const lang = opts.lang;\n    const months = lang.months;\n    const currentDate = dp.state.hilightedDate;\n    const currentMonth = currentDate.getMonth();\n    return ('<div class=\"dp-months\">' +\n        months.map(function (month, i) {\n            let className = 'dp-month';\n            className += (currentMonth === i ? ' dp-current' : '');\n            return ('<button tabindex=\"-1\" type=\"button\" class=\"' + className + '\" data-month=\"' + i + '\">' +\n                month +\n                '</button>');\n        }).join('') +\n        '</div>');\n}\n/**\n * keyDown handles keydown events that occur in the month picker\n *\n * @param {Event} e\n* @param {DatePickerContext} dp\n */\nfunction keyDown(e, dp) {\n    const key = e.code || e.keyCode;\n    const shiftBy = (key === dom_1.Key.left) ? -1 :\n        (key === dom_1.Key.right) ? 1 :\n            (key === dom_1.Key.up) ? -3 :\n                (key === dom_1.Key.down) ? 3 :\n                    0;\n    if (key === dom_1.Key.esc) {\n        dp.setState({\n            view: 'day',\n        });\n    }\n    else if (shiftBy) {\n        e.preventDefault();\n        dp.setState({\n            hilightedDate: date_manip_1.shiftMonth(dp.state.hilightedDate, shiftBy, true)\n        });\n    }\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvdmlld3MvbW9udGgtcGlja2VyLnRzLmpzIiwic291cmNlcyI6WyJ3ZWJwYWNrOi8vVGlueURhdGVQaWNrZXIvLi9zcmMvdmlld3MvbW9udGgtcGlja2VyLnRzP2I5NTIiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqXG4gKiBAZmlsZSBNYW5hZ2VzIHRoZSBtb250aC1waWNrZXIgdmlldy5cbiAqL1xuXG5pbXBvcnQge0tleX0gZnJvbSAnLi4vbGliL2RvbSc7XG5pbXBvcnQge3NoaWZ0TW9udGgsIHNldE1vbnRofSBmcm9tICcuLi9saWIvZGF0ZS1tYW5pcCc7XG5cbmV4cG9ydCBkZWZhdWx0IHtcbiAgb25LZXlEb3duOiBrZXlEb3duLFxuICBvbkNsaWNrOiB7XG4gICAgJ2RwLW1vbnRoJzogb25DaG9vc2VNb250aFxuICB9LFxuICByZW5kZXI6IHJlbmRlclxufTtcblxuZnVuY3Rpb24gb25DaG9vc2VNb250aChlOiBFdmVudCwgZHA6IGFueSkge1xuICBkcC5zZXRTdGF0ZSh7XG4gICAgaGlsaWdodGVkRGF0ZTogc2V0TW9udGgoZHAuc3RhdGUuaGlsaWdodGVkRGF0ZSwgcGFyc2VJbnQoKGUudGFyZ2V0IGFzIEhUTUxFbGVtZW50KS5nZXRBdHRyaWJ1dGUoJ2RhdGEtbW9udGgnKSBhcyBzdHJpbmcpKSxcbiAgICB2aWV3OiAnZGF5JyxcbiAgfSk7XG59XG5cbi8qKlxuICogcmVuZGVyIHJlbmRlcnMgdGhlIG1vbnRoIHBpY2tlciBhcyBhbiBIVE1MIHN0cmluZ1xuICpcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlckNvbnRleHR9IGRwIHRoZSBkYXRlIHBpY2tlciBjb250ZXh0XG4gKiBAcmV0dXJucyB7c3RyaW5nfVxuICovXG5mdW5jdGlvbiByZW5kZXIoZHA6IGFueSkge1xuICBjb25zdCBvcHRzID0gZHAub3B0cztcbiAgY29uc3QgbGFuZyA9IG9wdHMubGFuZztcbiAgY29uc3QgbW9udGhzID0gbGFuZy5tb250aHM7XG4gIGNvbnN0IGN1cnJlbnREYXRlID0gZHAuc3RhdGUuaGlsaWdodGVkRGF0ZTtcbiAgY29uc3QgY3VycmVudE1vbnRoID0gY3VycmVudERhdGUuZ2V0TW9udGgoKTtcblxuICByZXR1cm4gKFxuICAgICc8ZGl2IGNsYXNzPVwiZHAtbW9udGhzXCI+JyArXG4gICAgICBtb250aHMubWFwKGZ1bmN0aW9uIChtb250aDogc3RyaW5nLCBpOiBudW1iZXIpIHtcbiAgICAgICAgbGV0IGNsYXNzTmFtZSA9ICdkcC1tb250aCc7XG4gICAgICAgIGNsYXNzTmFtZSArPSAoY3VycmVudE1vbnRoID09PSBpID8gJyBkcC1jdXJyZW50JyA6ICcnKTtcblxuICAgICAgICByZXR1cm4gKFxuICAgICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCInICsgY2xhc3NOYW1lICsgJ1wiIGRhdGEtbW9udGg9XCInICsgaSArICdcIj4nICtcbiAgICAgICAgICAgIG1vbnRoICtcbiAgICAgICAgICAnPC9idXR0b24+J1xuICAgICAgICApO1xuICAgICAgfSkuam9pbignJykgK1xuICAgICc8L2Rpdj4nXG4gICk7XG59XG5cbi8qKlxuICoga2V5RG93biBoYW5kbGVzIGtleWRvd24gZXZlbnRzIHRoYXQgb2NjdXIgaW4gdGhlIG1vbnRoIHBpY2tlclxuICpcbiAqIEBwYXJhbSB7RXZlbnR9IGVcbiogQHBhcmFtIHtEYXRlUGlja2VyQ29udGV4dH0gZHBcbiAqL1xuZnVuY3Rpb24ga2V5RG93bihlOiBLZXlib2FyZEV2ZW50LCBkcDogYW55KSB7XG4gIGNvbnN0IGtleSA9ICBlLmNvZGUgfHwgZS5rZXlDb2RlO1xuICBjb25zdCBzaGlmdEJ5ID1cbiAgICAoa2V5ID09PSBLZXkubGVmdCkgPyAtMSA6XG4gICAgKGtleSA9PT0gS2V5LnJpZ2h0KSA/IDEgOlxuICAgIChrZXkgPT09IEtleS51cCkgPyAtMyA6XG4gICAgKGtleSA9PT0gS2V5LmRvd24pID8gMyA6XG4gICAgMDtcblxuICBpZiAoa2V5ID09PSBLZXkuZXNjKSB7XG4gICAgZHAuc2V0U3RhdGUoe1xuICAgICAgdmlldzogJ2RheScsXG4gICAgfSk7XG4gIH0gZWxzZSBpZiAoc2hpZnRCeSkge1xuICAgIGUucHJldmVudERlZmF1bHQoKTtcbiAgICBkcC5zZXRTdGF0ZSh7XG4gICAgICBoaWxpZ2h0ZWREYXRlOiBzaGlmdE1vbnRoKGRwLnN0YXRlLmhpbGlnaHRlZERhdGUsIHNoaWZ0QnksIHRydWUpXG4gICAgfSk7XG4gIH1cbn1cbiJdLCJtYXBwaW5ncyI6IjtBQUFBOztBQUVBOztBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBOzs7OztBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFFQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFFQTs7Ozs7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOyIsInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/views/month-picker.ts\n");
+
+/***/ }),
+
+/***/ "./src/views/year-picker.ts":
+/*!**********************************!*\
+  !*** ./src/views/year-picker.ts ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+eval("\n/**\n * @file Manages the year-picker view.\n */\nObject.defineProperty(exports, \"__esModule\", { value: true });\nconst dom_1 = __webpack_require__(/*! ../lib/dom */ \"./src/lib/dom.ts\");\nconst date_manip_1 = __webpack_require__(/*! ../lib/date-manip */ \"./src/lib/date-manip.ts\");\nexports.default = {\n    render: render,\n    onKeyDown: keyDown,\n    onClick: {\n        'dp-year': onChooseYear\n    },\n};\n/**\n * view renders the year picker as an HTML string.\n *\n * @param {DatePickerContext} dp the date picker context\n * @returns {string}\n */\nfunction render(dp) {\n    const state = dp.state;\n    const currentYear = state.hilightedDate.getFullYear();\n    const selectedYear = state.selectedDate.getFullYear();\n    return ('<div class=\"dp-years\">' +\n        mapYears(dp, function (year) {\n            let className = 'dp-year';\n            className += (year === currentYear ? ' dp-current' : '');\n            className += (year === selectedYear ? ' dp-selected' : '');\n            return ('<button tabindex=\"-1\" type=\"button\" class=\"' + className + '\" data-year=\"' + year + '\">' +\n                year +\n                '</button>');\n        }) +\n        '</div>');\n}\nfunction onChooseYear(e, dp) {\n    dp.setState({\n        hilightedDate: date_manip_1.setYear(dp.state.hilightedDate, parseInt(e.target.getAttribute('data-year'))),\n        view: 'day',\n    });\n}\nfunction keyDown(e, dp) {\n    const key = e.code || e.keyCode;\n    const opts = dp.opts;\n    const shiftBy = (key === dom_1.Key.left || key === dom_1.Key.up) ? 1 :\n        (key === dom_1.Key.right || key === dom_1.Key.down) ? -1 :\n            0;\n    if (key === dom_1.Key.esc) {\n        dp.setState({\n            view: 'day',\n        });\n    }\n    else if (shiftBy) {\n        e.preventDefault();\n        const shiftedYear = date_manip_1.shiftYear(dp.state.hilightedDate, shiftBy);\n        dp.setState({\n            hilightedDate: date_manip_1.constrainDate(shiftedYear, opts.min, opts.max),\n        });\n    }\n}\nfunction mapYears(dp, fn) {\n    let result = '';\n    const max = dp.opts.max.getFullYear();\n    for (let i = max; i >= dp.opts.min.getFullYear(); --i) {\n        result += fn(i);\n    }\n    return result;\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiLi9zcmMvdmlld3MveWVhci1waWNrZXIudHMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9UaW55RGF0ZVBpY2tlci8uL3NyYy92aWV3cy95ZWFyLXBpY2tlci50cz80MTYyIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKlxuICogQGZpbGUgTWFuYWdlcyB0aGUgeWVhci1waWNrZXIgdmlldy5cbiAqL1xuXG5pbXBvcnQge0tleX0gZnJvbSAnLi4vbGliL2RvbSc7XG5pbXBvcnQge3NldFllYXIsIHNoaWZ0WWVhciwgY29uc3RyYWluRGF0ZX0gZnJvbSAnLi4vbGliL2RhdGUtbWFuaXAnO1xuXG5leHBvcnQgZGVmYXVsdCB7XG4gIHJlbmRlcjogcmVuZGVyLFxuICBvbktleURvd246IGtleURvd24sXG4gIG9uQ2xpY2s6IHtcbiAgICAnZHAteWVhcic6IG9uQ2hvb3NlWWVhclxuICB9LFxufTtcblxuLyoqXG4gKiB2aWV3IHJlbmRlcnMgdGhlIHllYXIgcGlja2VyIGFzIGFuIEhUTUwgc3RyaW5nLlxuICpcbiAqIEBwYXJhbSB7RGF0ZVBpY2tlckNvbnRleHR9IGRwIHRoZSBkYXRlIHBpY2tlciBjb250ZXh0XG4gKiBAcmV0dXJucyB7c3RyaW5nfVxuICovXG5mdW5jdGlvbiByZW5kZXIoZHA6IGFueSkge1xuICBjb25zdCBzdGF0ZSA9IGRwLnN0YXRlO1xuICBjb25zdCBjdXJyZW50WWVhciA9IHN0YXRlLmhpbGlnaHRlZERhdGUuZ2V0RnVsbFllYXIoKTtcbiAgY29uc3Qgc2VsZWN0ZWRZZWFyID0gc3RhdGUuc2VsZWN0ZWREYXRlLmdldEZ1bGxZZWFyKCk7XG5cbiAgcmV0dXJuIChcbiAgICAnPGRpdiBjbGFzcz1cImRwLXllYXJzXCI+JyArXG4gICAgICBtYXBZZWFycyhkcCwgZnVuY3Rpb24gKHllYXI6IG51bWJlcikge1xuICAgICAgICBsZXQgY2xhc3NOYW1lID0gJ2RwLXllYXInO1xuICAgICAgICBjbGFzc05hbWUgKz0gKHllYXIgPT09IGN1cnJlbnRZZWFyID8gJyBkcC1jdXJyZW50JyA6ICcnKTtcbiAgICAgICAgY2xhc3NOYW1lICs9ICh5ZWFyID09PSBzZWxlY3RlZFllYXIgPyAnIGRwLXNlbGVjdGVkJyA6ICcnKTtcblxuICAgICAgICByZXR1cm4gKFxuICAgICAgICAgICc8YnV0dG9uIHRhYmluZGV4PVwiLTFcIiB0eXBlPVwiYnV0dG9uXCIgY2xhc3M9XCInICsgY2xhc3NOYW1lICsgJ1wiIGRhdGEteWVhcj1cIicgKyB5ZWFyICsgJ1wiPicgK1xuICAgICAgICAgICAgeWVhciArXG4gICAgICAgICAgJzwvYnV0dG9uPidcbiAgICAgICAgKTtcbiAgICAgIH0pICtcbiAgICAnPC9kaXY+J1xuICApO1xufVxuXG5mdW5jdGlvbiBvbkNob29zZVllYXIoZTogRXZlbnQsIGRwOiBhbnkpIHtcbiAgZHAuc2V0U3RhdGUoe1xuICAgIGhpbGlnaHRlZERhdGU6IHNldFllYXIoZHAuc3RhdGUuaGlsaWdodGVkRGF0ZSwgcGFyc2VJbnQoKGUudGFyZ2V0IGFzIEhUTUxFbGVtZW50KS5nZXRBdHRyaWJ1dGUoJ2RhdGEteWVhcicpIGFzIHN0cmluZykpLFxuICAgIHZpZXc6ICdkYXknLFxuICB9KTtcbn1cblxuZnVuY3Rpb24ga2V5RG93bihlOiBLZXlib2FyZEV2ZW50LCBkcDogYW55KSB7XG4gIGNvbnN0IGtleSA9IGUuY29kZSB8fCBlLmtleUNvZGU7XG4gIGNvbnN0IG9wdHMgPSBkcC5vcHRzO1xuICBjb25zdCBzaGlmdEJ5ID1cbiAgICAoa2V5ID09PSBLZXkubGVmdCB8fCBrZXkgPT09IEtleS51cCkgPyAxIDpcbiAgICAoa2V5ID09PSBLZXkucmlnaHQgfHwga2V5ID09PSBLZXkuZG93bikgPyAtMSA6XG4gICAgMDtcblxuICBpZiAoa2V5ID09PSBLZXkuZXNjKSB7XG4gICAgZHAuc2V0U3RhdGUoe1xuICAgICAgdmlldzogJ2RheScsXG4gICAgfSk7XG4gIH0gZWxzZSBpZiAoc2hpZnRCeSkge1xuICAgIGUucHJldmVudERlZmF1bHQoKTtcbiAgICBjb25zdCBzaGlmdGVkWWVhciA9IHNoaWZ0WWVhcihkcC5zdGF0ZS5oaWxpZ2h0ZWREYXRlLCBzaGlmdEJ5KTtcblxuICAgIGRwLnNldFN0YXRlKHtcbiAgICAgIGhpbGlnaHRlZERhdGU6IGNvbnN0cmFpbkRhdGUoc2hpZnRlZFllYXIsIG9wdHMubWluLCBvcHRzLm1heCksXG4gICAgfSk7XG4gIH1cbn1cblxuZnVuY3Rpb24gbWFwWWVhcnMoZHA6IGFueSwgZm46IChpdGVyOiBudW1iZXIpID0+IHN0cmluZykge1xuICBsZXQgcmVzdWx0ID0gJyc7XG4gIGNvbnN0IG1heCA9IGRwLm9wdHMubWF4LmdldEZ1bGxZZWFyKCk7XG5cbiAgZm9yIChsZXQgaSA9IG1heDsgaSA+PSBkcC5vcHRzLm1pbi5nZXRGdWxsWWVhcigpOyAtLWkpIHtcbiAgICByZXN1bHQgKz0gZm4oaSk7XG4gIH1cblxuICByZXR1cm4gcmVzdWx0O1xufVxuIl0sIm1hcHBpbmdzIjoiO0FBQUE7O0FBRUE7O0FBRUE7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7Ozs7O0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQUE7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7Iiwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/views/year-picker.ts\n");
+
+/***/ })
+
+/******/ });

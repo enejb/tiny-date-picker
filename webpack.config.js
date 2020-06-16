@@ -1,7 +1,6 @@
 const path = require('path');
 
-module.exports = {
-    entry: './src/index.ts',
+const common = {
     mode: 'production',
     module: {
         rules: [
@@ -18,12 +17,37 @@ module.exports = {
         ]
     },
     resolve: {
-        extensions: [ '.ts' ]
+        extensions: ['.ts']
     },
+}
+
+const commonOutput = {
+    path: path.resolve(__dirname, 'dist'),
+    //libraryTarget: 'umd',
+    globalObject: 'this'
+}
+
+const TinyDatePicker = {
+    entry: './src/date-picker.ts',
     output: {
         filename: 'tiny-date-picker.js',
-        path: path.resolve(__dirname, 'dist'),
         library: 'TinyDatePicker',
-        libraryTarget: "var"
-    }
+        ...commonOutput
+    },
+    ...common
 }
+
+const TinyDateRangePicker = {
+    entry: './src/date-range-picker.ts',
+    output: {
+        filename: 'tiny-date-range-picker.js',
+        library: 'TinyDateRangePicker',
+        ...commonOutput
+    },
+    ...common
+}
+
+module.exports = [
+    TinyDatePicker,
+    TinyDateRangePicker
+]

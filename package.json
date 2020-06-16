@@ -5,6 +5,7 @@
   "main": "dist/tiny-date-picker.js",
   "scripts": {
     "build": "webpack",
+    "watch": "webpack --watch -d",
     "lint": "eslint src/",
     "test": "jest"
   },
@@ -34,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^3.2.0",
     "@typescript-eslint/parser": "^3.2.0",
     "eslint": "^7.2.0",
+    "http-server": "^0.12.3",
     "jest": "^26.0.1",
     "ts-jest": "^26.1.0",
     "ts-loader": "^7.0.5",
