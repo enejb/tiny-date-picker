@@ -1,5 +1,5 @@
 /* global expect */
-import DatePickerOptions from '../src/date-picker-options';
+import { DatePickerOptions } from '../src/date-picker-options';
 
 describe('DatePickerOptions', () => {
   it('lang defaults to english', () => {
@@ -24,15 +24,6 @@ describe('DatePickerOptions', () => {
     ]);
   });
 
-  it('allows overriding some lang props', () => {
-    const opts = DatePickerOptions({
-      lang: {close: 'X'}
-    });
-    expect(opts.lang.close).toEqual('X');
-    expect(opts.lang.today).toEqual('Today');
-    expect(opts.lang.clear).toEqual('Clear');
-  });
-
   it('defaults min/max to roughly 100 years', () => {
     const opts = DatePickerOptions();
     const dt = new Date();
@@ -46,8 +37,8 @@ describe('DatePickerOptions', () => {
 
   it('includes min/max in custom inRange function', () => {
     const opts = DatePickerOptions({
-      min: '10/20/2000',
-      max: '10/20/2010',
+      min: new Date('10/20/2000'),
+      max: new Date('10/20/2010'),
       inRange: (d) => d.getFullYear() !== 2001,
     });
 

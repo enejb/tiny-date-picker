@@ -12,7 +12,7 @@ describe('Emitter', () => {
 
   it('can have multiple handlers', () => {
     const emitter = Emitter();
-    const words = [];
+    const words: string[] = [];
     emitter.on('yo', (_, s) => words[0] = s);
     emitter.on('yo', (_, s) => words[1] = s);
     emitter.emit('yo', 'hoi');
@@ -39,9 +39,9 @@ describe('Emitter', () => {
 
   it('can unregister a single handler', () => {
     const emitter = Emitter();
-    const words = [];
-    const h1 = (_, s) => words[0] = s;
-    const h2 = (_, s) => words[1] = s;
+    const words: string[] = [];
+    const h1 = (_: any, s: string) => words[0] = s;
+    const h2 = (_: any, s: string) => words[1] = s;
     emitter.on('yo', h1);
     emitter.on('yo', h2);
     emitter.off('yo', h1);

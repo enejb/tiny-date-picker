@@ -12,7 +12,7 @@ import {
 } from '../src/lib/date-manip';
 
 describe('date-manip', () => {
-  const sToDt = (s) => new Date(s);
+  const sToDt = (candidate: string | Date) => new Date(candidate);
 
   describe('now', () => {
     it('does not have time', () => {

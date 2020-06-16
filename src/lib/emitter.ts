@@ -3,10 +3,13 @@
  */
 
 type TEmitterFn = (name: string, arg: any) => void
+type TEmitterFns = {[key: string]: TEmitterFn}
 
 interface IHandlers {
   [key:string]: Array<TEmitterFn>
 }
+
+
 
 
 /**
@@ -21,30 +24,30 @@ export default function Emitter() {
     (handlers[name] = (handlers[name] || [])).push(handler);
   }
 
-  function onMany(fns: Array<TEmitterFn>) {
+  function onMany(fns: TEmitterFns) {
     for (const name in fns) {
       onOne(name, fns[name]);
     }
   }
 
   return {
-    on: function (name: string | Array<TEmitterFn>, handler: TEmitterFn) {
+    on: function (name: string | TEmitterFns, handler?: TEmitterFn) {
       if (handler) {
         onOne(name as string, handler);
       } else {
-        onMany(name as Array<TEmitterFn>);
+        onMany(name as TEmitterFns);
       }
 
       return this;
     },
 
-    emit: function (name: string, arg: any) {
+    emit: function (name: string, arg?: any) {
       (handlers[name] || []).forEach(function (handler) {
         handler(name, arg);
       });
     },
 
-    off: function (name: string, handler: TEmitterFn) {
+    off: function (name?: string, handler?: TEmitterFn) {
       if (!name) {
         handlers = {};
       } else if (!handler) {
