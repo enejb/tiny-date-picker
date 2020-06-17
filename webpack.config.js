@@ -23,7 +23,6 @@ const common = {
 
 const commonOutput = {
     path: path.resolve(__dirname, 'dist'),
-    //libraryTarget: 'umd',
     globalObject: 'this'
 }
 

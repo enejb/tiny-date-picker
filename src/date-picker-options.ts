@@ -31,22 +31,21 @@ var english = {
  * DatePickerOptions constructs a new date picker options object, overriding
  * default values with any values specified in opts.
  *
- * @param {DatePickerOptions} opts
  * @returns {DatePickerOptions}
+ * @param _options
  */
-export function DatePickerOptions(opts: IDatePickerOptions) {
-    opts = opts || {};
-    opts = cp(defaults(), opts);
-    var parse = dateOrParse(opts.parse);
-    opts.lang = cp(english, opts.lang);
-    opts.parse = parse;
-    opts.inRange = makeInRangeFn(opts);
-    opts.min = parse(opts.min || shiftYear(now(), -100));
-    opts.max = parse(opts.max || shiftYear(now(), 100));
-    opts.hilightedDate = opts.parse(opts.hilightedDate);
-    opts.alignment = opts.alignment || 'left'
+export function DatePickerOptions(_options: Partial<IDatePickerOptions> = {}) {
+    const options = cp(defaults(), _options);
+    var parse = dateOrParse(options.parse);
+    options.lang = cp(english, options.lang);
+    options.parse = parse;
+    options.inRange = makeInRangeFn(options);
+    options.min = parse(options.min || shiftYear(now(), -100));
+    options.max = parse(options.max || shiftYear(now(), 100));
+    options.hilightedDate = options.parse(options.hilightedDate);
+    options.alignment = options.alignment || 'left'
 
-    return opts;
+    return options;
 }
 
 function defaults(): any {

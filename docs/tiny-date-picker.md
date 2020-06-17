@@ -22,17 +22,17 @@ it `import TinyDatePicker from 'tiny-date-picker';` then call it like this:
 
 ```javascript
 // Initialize a date picker on the specified input element
-TinyDatePicker(document.querySelector('input'));
+DatePicker(document.querySelector('input'));
 
 // Or with a CSS selector
-TinyDatePicker('.some-class-or-id-or-whatever');
+DatePicker('.some-class-or-id-or-whatever');
 ```
 
 You can also pass in options as an optional second argument:
 
 ```javascript
 // Initialize a date picker using truncated month names
-TinyDatePicker(document.querySelector('input'), {
+DatePicker(document.querySelector('input'), {
   lang: {
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   },
@@ -46,7 +46,7 @@ manipulate the date picker as documented below:
 
 ```javascript
 // Initialize a date picker on the specified input element
-const dp = TinyDatePicker('input');
+const dp = DatePicker('input');
 
 // Show the date picker
 dp.open();
@@ -90,7 +90,7 @@ TinyDatePicker can be configured by passing it a second argument:
 
 ```javascript
 
-TinyDatePicker('input', {
+DatePicker('input', {
   // What dom element the date picker will be added to. This defaults
   // to document.body
   appendTo: document.querySelector('.foo'),
@@ -186,12 +186,12 @@ The event handler is passed two arguments: the name of the event, and the date p
 
 ```js
 // Log the selected date any time it changes
-TinyDatePicker('.my-input')
+DatePicker('.my-input')
   .on('select', (_, dp) => console.log(dp.state.selectedDate))
   .on('close', () => console.log('CLOSED!!!'));
 
 // You can also register for multiple events at once without chaining the on method:
-TinyDatePicker('.my-input')
+DatePicker('.my-input')
   .on({
     select: (_, dp) => console.log(dp.state.selectedDate),
     close: () => console.log('CLOSED!!!')
@@ -201,7 +201,7 @@ TinyDatePicker('.my-input')
 To remove an event handler, you call the date picker's `off` method.
 
 ```js
-const dp = TinyDatePicker('.example');
+const dp = DatePicker('.example');
 
 function onOpen() {
   console.log('OPENED!!!');

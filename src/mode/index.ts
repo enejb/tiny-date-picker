@@ -9,7 +9,7 @@ import { IDatePickerOptions } from '../interfaces';
 
 
 export default function Mode(input: HTMLInputElement | string, emit: any, opts: IDatePickerOptions) {
-    const el = input instanceof HTMLInputElement ? input : document.querySelector(input)
+    const el = input instanceof HTMLElement ? input : document.querySelector(input)
 
     if (!el) {
         throw new Error(`The provided input '${input}' could not be found.`)
@@ -23,7 +23,7 @@ export default function Mode(input: HTMLInputElement | string, emit: any, opts: 
             return DropdownMode(el as HTMLInputElement, emit, opts);
 
         case 'dp-permanent':
-            return PermanentMode(el as HTMLInputElement, emit, opts);
+            return PermanentMode(el as HTMLElement, emit, opts);
         
         default:
             throw new Error(`Unknown mode: '${opts.mode}`)

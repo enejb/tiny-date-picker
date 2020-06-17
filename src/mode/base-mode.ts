@@ -137,7 +137,9 @@ export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDate
         // Conceptually similar to setState in React, updates
         // the view state and re-renders.
         setState: function (state: IState) {
-            dp.state = {...dp.state, ...state}
+            for (const key in state) {
+                (dp.state as any)[key] = (state as any)[key]
+            }
 
             emit('statechange');
             dp.render();

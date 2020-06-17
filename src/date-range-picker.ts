@@ -1,5 +1,5 @@
-// A date range picker built on top of TinyDatePicker;
-import { TinyDatePicker } from './date-picker';
+// A date range picker built on top of DatePicker;
+import { DatePicker } from './date-picker';
 import Emitter from './lib/emitter';
 import { shiftMonth, datesEq } from './lib/date-manip';
 import { cp } from './lib/fns';
@@ -14,7 +14,7 @@ import { IDateRangePickerOptions, IDatePicker, IDateRangePickerState } from './i
 */
 
 /**
-* An instance of TinyDatePicker
+* An instance of DatePicker
 *
 * @typedef {Object} DateRangePickerInst
 * @property {DateRangeState} state - The start / end dates
@@ -24,7 +24,7 @@ import { IDateRangePickerOptions, IDatePicker, IDateRangePickerState } from './i
 */
 
 /**
- * TinyDatePicker constructs a new date picker for the specified input
+ * DatePicker constructs a new date picker for the specified input
  *
  * @param {HTMLElement} input The input associated with the datepicker
  * @returns {DateRangePickerInst}
@@ -50,11 +50,11 @@ export function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOp
     throw new Error(`Could not find DateRangePicker endElement: '${endEl}`)
   }
 
-  const start = TinyDatePicker(startEl as HTMLInputElement, cp({}, opts.startOpts, {
+  const start = DatePicker(startEl as HTMLInputElement, cp({}, opts.startOpts, {
     mode: 'dp-permanent',
     dateClass: dateClass,
   }));
-  const end = TinyDatePicker(endEl as HTMLInputElement, cp({}, opts.endOpts, {
+  const end = DatePicker(endEl as HTMLInputElement, cp({}, opts.endOpts, {
     mode: 'dp-permanent',
     hilightedDate: shiftMonth(start.state.hilightedDate as Date, 1),
     dateClass: dateClass,

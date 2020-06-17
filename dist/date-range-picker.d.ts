@@ -7,7 +7,7 @@ import { IDateRangePickerOptions, IDateRangePickerState } from './interfaces';
 * @property {Date} end - The end date (can be null)
 */
 /**
-* An instance of TinyDatePicker
+* An instance of DatePicker
 *
 * @typedef {Object} DateRangePickerInst
 * @property {DateRangeState} state - The start / end dates
@@ -16,7 +16,7 @@ import { IDateRangePickerOptions, IDateRangePickerState } from './interfaces';
 * @property {function} setState - Changes the current state of the date picker
 */
 /**
- * TinyDatePicker constructs a new date picker for the specified input
+ * DatePicker constructs a new date picker for the specified input
  *
  * @param {HTMLElement} input The input associated with the datepicker
  * @returns {DateRangePickerInst}
@@ -24,14 +24,18 @@ import { IDateRangePickerOptions, IDateRangePickerState } from './interfaces';
 export declare function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOptions): {
     state: IDateRangePickerState;
     setState: (newState: IDateRangePickerState) => void;
-    on: (name: string | ((name: string, arg: any) => void)[], handler: (name: string, arg: any) => void) => {
+    on: (name: string | {
+        [key: string]: (name: string, arg: any) => void;
+    }, handler?: ((name: string, arg: any) => void) | undefined) => {
         on: any;
-        emit: (name: string, arg: any) => void;
-        off: (name: string, handler: (name: string, arg: any) => void) => any;
+        emit: (name: string, arg?: any) => void;
+        off: (name?: string | undefined, handler?: ((name: string, arg: any) => void) | undefined) => any;
     };
-    off: (name: string, handler: (name: string, arg: any) => void) => {
-        on: (name: string | ((name: string, arg: any) => void)[], handler: (name: string, arg: any) => void) => any;
-        emit: (name: string, arg: any) => void;
+    off: (name?: string | undefined, handler?: ((name: string, arg: any) => void) | undefined) => {
+        on: (name: string | {
+            [key: string]: (name: string, arg: any) => void;
+        }, handler?: ((name: string, arg: any) => void) | undefined) => any;
+        emit: (name: string, arg?: any) => void;
         off: any;
     };
 };

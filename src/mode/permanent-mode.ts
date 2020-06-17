@@ -6,8 +6,8 @@ import BaseMode from './base-mode';
 import { IDatePickerOptions } from '../interfaces';
 
 
-export default function PermanentMode(root: HTMLInputElement, emit: any, opts: IDatePickerOptions) {
-    const dp = BaseMode(root, emit, opts);
+export default function PermanentMode(root: HTMLElement, emit: any, opts: IDatePickerOptions) {
+    const dp = BaseMode(root as HTMLInputElement, emit, opts);
 
     dp.close = noop;
     dp.updateInput = noop;

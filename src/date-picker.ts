@@ -8,13 +8,13 @@ import Mode from './mode/index';
 import Emitter from './lib/emitter';
 
 /**
- * TinyDatePicker constructs a new date picker for the specified input
+ * DatePicker constructs a new date picker for the specified input
  *
  * @param {HTMLElement | string} input The input or CSS selector associated with the datepicker
  * @param {DatePickerOptions} opts The options for initializing the date picker
  * @returns {DatePicker}
  */
-export function TinyDatePicker(input: HTMLInputElement | string, opts: IDatePickerOptions) {
+export function DatePicker(input: HTMLInputElement | string, opts: IDatePickerOptions) {
   const emitter = Emitter();
   const options = DatePickerOptions(opts);
   const mode = Mode(input, emit, options);

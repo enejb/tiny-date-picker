@@ -21,10 +21,10 @@ it `import TinyDatePicker from 'tiny-date-picker';` then call it like this:
 
 ```javascript
 // Initialize a date picker on the specified input element
-TinyDatePicker(document.querySelector('input'));
+DatePicker(document.querySelector('input'));
 
 // Or with a CSS selector
-TinyDatePicker('.some-class-or-id-or-whatever');
+DatePicker('.some-class-or-id-or-whatever');
 ```
 
 ## Documentation
