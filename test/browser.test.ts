@@ -1,9 +1,6 @@
 /* global expect, beforeAll, afterAll */
 import webdriver, { By, ThenableWebDriver, until } from 'selenium-webdriver'
 import chrome from 'selenium-webdriver/chrome'
-import { elementIsVisible, elementLocated } from 'selenium-webdriver/lib/until'
-
-const sleep = (x: number) => new Promise(resolve => setTimeout(resolve, x))
 
 const options = new chrome.Options()
 options.addArguments(
@@ -106,12 +103,13 @@ describe('browser', () => {
             await driver.wait(until.elementLocated(By.css('.click-test')))
             const el = await driver.findElement(By.css('.click-test')).click()
             await driver.wait(untilRemoved('.click_test', driver))
-            const day = await driver.findElement(By.css(`[data-date="1144447200000"]`))
+            await driver.wait(until.elementLocated(By.css('.dp-day')))
+            const day = await driver.findElement(By.css(`.dp-day`))
             await day.click()
             await driver.wait(untilRemoved('.dp-modal', driver))
             const val = await driver.findElement(By.css('.click-test')).getAttribute('value')
 
-            expect(val).toEqual('4/8/2006')
+            expect(val).toEqual('3/26/2006')
         })
 
         it('should show the prev month when prev arrow is clicked', async () => {
@@ -218,6 +216,7 @@ describe('browser', () => {
       `)
             await driver.wait(until.elementLocated(By.css('.my-modal')), 2000, 'could not find expected modal on page!')
             await driver.findElement(By.css('.my-modal')).click()
+            await driver.wait(until.elementLocated(byText('17')))
             await driver.findElement(byText('17')).click()
             await driver.wait(untilRemoved('.dp-modal', driver))
 
@@ -309,8 +308,9 @@ describe('browser', () => {
       `)
             const el = await driver.findElement(By.css('.modal-txt'))
             await el.click()
-            await driver.wait(elementIsVisible(driver.findElement(byText('May'))))
+            await driver.wait(until.elementLocated(byText('May')))
             await driver.findElement(byText('May')).click()
+            await driver.wait(until.elementLocated(byText('February')))
             await driver.findElement(byText('February')).click()
 
             const current = await currentEl(driver, '.dp-modal')
