@@ -30,10 +30,10 @@ export function noop() { }
  * @returns {Object}
  */
 export function cp(...args: any[]) {
-  var o1 = args[0];
-  for (var i = 1; i < args.length; ++i) {
-    var o2 = args[i] || {};
-    for (var key in o2) {
+  const o1 = args[0];
+  for (let i = 1; i < args.length; ++i) {
+    const o2 = args[i] || {};
+    for (const key in o2) {
       o1[key] = o2[key];
     }
   }
