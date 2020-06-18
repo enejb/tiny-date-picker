@@ -21,7 +21,7 @@ export default {
  */
 function render(dp: any) {
   const state = dp.state;
-  const currentYear = state.hilightedDate.getFullYear();
+  const currentYear = state.highlightedDate.getFullYear();
   const selectedYear = state.selectedDate.getFullYear();
 
   return (
@@ -43,7 +43,7 @@ function render(dp: any) {
 
 function onChooseYear(e: Event, dp: any) {
   dp.setState({
-    hilightedDate: setYear(dp.state.hilightedDate, parseInt((e.target as HTMLElement).getAttribute('data-year') as string)),
+    highlightedDate: setYear(dp.state.highlightedDate, parseInt((e.target as HTMLElement).getAttribute('data-year') as string)),
     view: 'day',
   });
 }
@@ -62,10 +62,10 @@ function keyDown(e: KeyboardEvent, dp: any) {
     });
   } else if (shiftBy) {
     e.preventDefault();
-    const shiftedYear = shiftYear(dp.state.hilightedDate, shiftBy);
+    const shiftedYear = shiftYear(dp.state.highlightedDate, shiftBy);
 
     dp.setState({
-      hilightedDate: constrainDate(shiftedYear, opts.min, opts.max),
+      highlightedDate: constrainDate(shiftedYear, opts.min, opts.max),
     });
   }
 }

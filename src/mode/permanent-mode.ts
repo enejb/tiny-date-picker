@@ -14,7 +14,7 @@ export default function PermanentMode(root: HTMLElement, emit: any, opts: IDateP
     dp.shouldFocusOnRender = opts.shouldFocusOnRender || false;
 
     dp.computeSelectedDate = function () {
-        return opts.hilightedDate;
+        return opts.highlightedDate;
     };
 
     dp.attachToDom = function () {

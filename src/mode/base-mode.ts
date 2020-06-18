@@ -58,7 +58,7 @@ export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDate
             }
 
             selectedDate = constrainDate(dp.computeSelectedDate(), opts.min, opts.max);
-            dp.state.hilightedDate = selectedDate || opts.hilightedDate;
+            dp.state.highlightedDate = selectedDate || opts.highlightedDate;
             dp.state.view = 'day';
 
             dp.attachToDom();
@@ -149,8 +149,8 @@ export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDate
     detatchInputEvents = attachInputEvents(input, dp);
 
     // Builds the initial view state
-    // selectedDate is a special case and causes changes to hilightedDate
-    // hilightedDate is set on open, so remains undefined initially
+    // selectedDate is a special case and causes changes to highlightedDate
+    // highlightedDate is set on open, so remains undefined initially
     // view is the current view (day, month, year)
     function initialState(): IState {
         return {
@@ -164,7 +164,7 @@ export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDate
 
                 if (dt) {
                     selectedDate = new Date(dt);
-                    dp.state.hilightedDate = selectedDate;
+                    dp.state.highlightedDate = selectedDate;
                 } else {
                     selectedDate = dt;
                 }
@@ -220,7 +220,7 @@ function attachInputEvents(input: HTMLElement, dp: IDatePicker) {
             const target = e.target as HTMLInputElement
             const date = dp.opts.parse(target.value);
             isNaN(date.valueOf()) || dp.setState({
-                hilightedDate: date,
+                highlightedDate: date,
             });
         }),
     ];

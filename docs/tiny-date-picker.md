@@ -64,7 +64,7 @@ dp.state.view;
 dp.state.selectedDate;
 
 // Get the currently hilighted date (should not be null)
-dp.state.hilightedDate;
+dp.state.highlightedDate;
 
 // Add an event handler
 dp.on('statechange', (_, picker) => console.log(picker.state));
@@ -74,7 +74,7 @@ dp.off();
 
 // Update the date picker's state and redraw as necessary.
 // This example causes the date picker to show the month-picker view.
-// You can use setStsate to change the selectedDate or hilightedDate as well.
+// You can use setStsate to change the selectedDate or highlightedDate as well.
 dp.setState({
   view: 'month',
 });
@@ -139,9 +139,9 @@ DatePicker('input', {
   // 'dp-permanent' displays the date picker as a permanent (always showing) calendar
   mode: 'dp-modal',
 
-  // hilightedDate specifies what date to hilight when the date picker is displayed and the
+  // highlightedDate specifies what date to hilight when the date picker is displayed and the
   // associated input has no value.
-  hilightedDate: new Date(),
+  highlightedDate: new Date(),
 
   // min {string|Date} specifies the minimum date that can be selected (inclusive).
   // All earlier dates will be disabled.

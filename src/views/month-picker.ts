@@ -15,7 +15,7 @@ export default {
 
 function onChooseMonth(e: Event, dp: any) {
   dp.setState({
-    hilightedDate: setMonth(dp.state.hilightedDate, parseInt((e.target as HTMLElement).getAttribute('data-month') as string)),
+    highlightedDate: setMonth(dp.state.highlightedDate, parseInt((e.target as HTMLElement).getAttribute('data-month') as string)),
     view: 'day',
   });
 }
@@ -30,7 +30,7 @@ function render(dp: any) {
   const opts = dp.opts;
   const lang = opts.lang;
   const months = lang.months;
-  const currentDate = dp.state.hilightedDate;
+  const currentDate = dp.state.highlightedDate;
   const currentMonth = currentDate.getMonth();
 
   return (
@@ -71,7 +71,7 @@ function keyDown(e: KeyboardEvent, dp: any) {
   } else if (shiftBy) {
     e.preventDefault();
     dp.setState({
-      hilightedDate: shiftMonth(dp.state.hilightedDate, shiftBy, true)
+      highlightedDate: shiftMonth(dp.state.highlightedDate, shiftBy, true)
     });
   }
 }

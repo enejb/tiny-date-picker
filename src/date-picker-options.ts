@@ -42,7 +42,7 @@ export function DatePickerOptions(_options: Partial<IDatePickerOptions> = {}) {
     options.inRange = makeInRangeFn(options);
     options.min = parse(options.min || shiftYear(now(), -100));
     options.max = parse(options.max || shiftYear(now(), 100));
-    options.hilightedDate = options.parse(options.hilightedDate);
+    options.highlightedDate = options.parse(options.highlightedDate);
     options.alignment = options.alignment || 'left'
 
     return options;
@@ -57,7 +57,7 @@ function defaults(): any {
 
         // The date to hilight initially if the date picker has no
         // initial value.
-        hilightedDate: now(),
+        highlightedDate: now(),
 
         format: function (dt: Date) {
             return (dt.getMonth() + 1) + '/' + dt.getDate() + '/' + dt.getFullYear();

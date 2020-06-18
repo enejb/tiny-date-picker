@@ -452,7 +452,7 @@ describe('browser', () => {
         document.write('<input class="my-input" value="1/2/2050" />');
         TinyDatePicker.DatePicker(document.querySelector('.my-input'), {
           mode: 'dp-below',
-          hilightedDate: '2/3/2005',
+          highlightedDate: '2/3/2005',
         });
       `)
 
@@ -519,12 +519,12 @@ describe('browser', () => {
             await elDateIs(current, '12/28/2009')
         })
 
-        it('hilights the hilightedDate date', async () => {
+        it('hilights the highlightedDate date', async () => {
             await driver.executeScript(`
         document.write('<div class="perm" />');
         TinyDatePicker.DatePicker(document.querySelector('.perm'), {
           mode: 'dp-permanent',
-          hilightedDate: '2/3/2005',
+          highlightedDate: '2/3/2005',
           min: '1/1/2000',
           max: '1/1/2010',
         });

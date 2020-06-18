@@ -34,8 +34,8 @@ function render(dp: IDatePicker) {
   const dayNames = lang.days;
   const dayOffset = opts.dayOffset || 0;
   const selectedDate = state.selectedDate;
-  const hilightedDate = state.hilightedDate;
-  const hilightedMonth = hilightedDate!.getMonth();
+  const highlightedDate = state.highlightedDate;
+  const hilightedMonth = highlightedDate!.getMonth();
   const today = now().getTime();
 
   return (
@@ -46,7 +46,7 @@ function render(dp: IDatePicker) {
           lang.months[hilightedMonth] +
         '</button>' +
         '<button tabindex="-1" type="button" class="dp-cal-year">' +
-          hilightedDate!.getFullYear() +
+          highlightedDate!.getFullYear() +
         '</button>' +
         '<button tabindex="-1" type="button" class="dp-next">Next</button>' +
       '</header>' +
@@ -56,13 +56,13 @@ function render(dp: IDatePicker) {
             '<span class="dp-col-header">' + dayNames[(i + dayOffset) % dayNames.length] + '</span>'
           );
         }).join('') +
-        mapDays(hilightedDate!, dayOffset, function (date) {
+        mapDays(highlightedDate!, dayOffset, function (date) {
           const isNotInMonth = date.getMonth() !== hilightedMonth;
           const isDisabled = !opts.inRange(date);
           const isToday = date.getTime() === today;
           let className = 'dp-day';
           className += (isNotInMonth ? ' dp-edge-day' : '');
-          className += (datesEq(date, hilightedDate) ? ' dp-current' : '');
+          className += (datesEq(date, highlightedDate) ? ' dp-current' : '');
           className += (datesEq(date, selectedDate) ? ' dp-selected' : '');
           className += (isDisabled ? ' dp-day-disabled' : '');
           className += (isToday ? ' dp-day-today' : '');
@@ -104,7 +104,7 @@ function keyDown(e: KeyboardEvent, dp: any) {
   } else if (shiftBy) {
     e.preventDefault();
     dp.setState({
-      hilightedDate: shiftDay(dp.state.hilightedDate, shiftBy)
+      highlightedDate: shiftDay(dp.state.highlightedDate, shiftBy)
     });
   }
 }
@@ -138,16 +138,16 @@ function showYearPicker(e: Event, dp: any) {
 }
 
 function gotoNextMonth(e: Event, dp: any) {
-  const hilightedDate = dp.state.hilightedDate;
+  const highlightedDate = dp.state.highlightedDate;
   dp.setState({
-    hilightedDate: shiftMonth(hilightedDate, 1)
+    highlightedDate: shiftMonth(highlightedDate, 1)
   });
 }
 
 function gotoPrevMonth(e: Event, dp: any) {
-  const hilightedDate = dp.state.hilightedDate;
+  const highlightedDate = dp.state.highlightedDate;
   dp.setState({
-    hilightedDate: shiftMonth(hilightedDate, -1)
+    highlightedDate: shiftMonth(highlightedDate, -1)
   });
 }
 

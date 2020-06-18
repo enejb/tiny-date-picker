@@ -56,7 +56,7 @@ export function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOp
   }));
   const end = DatePicker(endEl as HTMLInputElement, cp({}, opts.endOpts, {
     mode: 'dp-permanent',
-    hilightedDate: shiftMonth(start.state.hilightedDate as Date, 1),
+    highlightedDate: shiftMonth(start.state.highlightedDate as Date, 1),
     dateClass: dateClass,
   }));
 
@@ -74,8 +74,8 @@ export function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOp
   end.on('select', dateSelected);
 
   function onStateChange(_: any, dp: any) {
-    const d1 = start.state.hilightedDate as Date;
-    const d2 = end.state.hilightedDate as Date;
+    const d1 = start.state.highlightedDate as Date;
+    const d2 = end.state.highlightedDate as Date;
     const diff = diffMonths(d1, d2);
 
     if (diff === 1) {
@@ -84,11 +84,11 @@ export function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOp
 
     if (dp === start) {
       end.setState({
-        hilightedDate: shiftMonth(dp.state.hilightedDate, 1),
+        highlightedDate: shiftMonth(dp.state.highlightedDate, 1),
       });
     } else {
       start.setState({
-        hilightedDate: shiftMonth(dp.state.hilightedDate, -1),
+        highlightedDate: shiftMonth(dp.state.highlightedDate, -1),
       });
     }
   }
