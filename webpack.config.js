@@ -1,7 +1,8 @@
 const path = require('path');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
 const common = {
-    mode: 'production',
+    mode: 'development',
     module: {
         rules: [
             {
@@ -13,23 +14,36 @@ const common = {
                     }
                 },
                 exclude: /node_modules/
-            }
+            },
+            {
+                test: /\.css$/, 
+                use: [ 
+                   MiniCssExtractPlugin.loader,
+                   "css-loader",
+                ]
+             }
         ]
     },
     resolve: {
         extensions: ['.ts']
     },
+    plugins: [
+        new MiniCssExtractPlugin()
+    ]
 }
 
 const commonOutput = {
+    filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
     globalObject: 'this'
 }
 
 const TinyDatePicker = {
-    entry: './src/date-picker.ts',
+    entry: {
+        'TinyDatePicker': './src/date-picker.ts',
+        'TinyDatePickerStyle': './src/date-picker.css'
+    },
     output: {
-        filename: 'tiny-date-picker.js',
         library: 'TinyDatePicker',
         ...commonOutput
     },
@@ -37,9 +51,11 @@ const TinyDatePicker = {
 }
 
 const TinyDateRangePicker = {
-    entry: './src/date-range-picker.ts',
+    entry: {
+        'TinyDateRangePicker': './src/date-range-picker.ts',
+        'TinyDateRangePickerStyle': './src/date-range-picker.css'
+    },
     output: {
-        filename: 'tiny-date-range-picker.js',
         library: 'TinyDateRangePicker',
         ...commonOutput
     },

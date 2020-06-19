@@ -1,7 +1,7 @@
 export interface IDatePickerOptions {
     lang: ILanguage;
     mode: 'dp-modal' | 'dp-below' | 'dp-permanent';
-    hilightedDate: Date;
+    highlightedDate: Date;
     format: (dt: Date) => string;
     parse: (candidate: Date | string) => Date;
     dateClass: (dt: Date) => string;
@@ -42,7 +42,7 @@ export interface IDatePicker {
 export interface IState {
     selectedDate: Date;
     view: 'day' | 'month' | 'year';
-    hilightedDate?: Date;
+    highlightedDate?: Date;
 }
 export interface IDateRangePickerState {
     start: Date | undefined;
