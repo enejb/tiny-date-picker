@@ -1,5 +1,9 @@
 # Tiny Date Picker
 
+[![NpmLicense](https://img.shields.io/npm/l/@verivox/tiny-date-picker.svg?style=flat-square)](https://www.npmjs.com/package/@verivox/tiny-date-picker)
+[![npm bundle size (minified)](https://img.shields.io/bundlephobia/min/@verivox/tiny-date-picker.svg?style=flat-square)](https://www.npmjs.com/package/@verivox/tiny-date-picker)
+[![npm (scoped)](https://img.shields.io/npm/v/@verivox/tiny-date-picker.svg?style=flat-square)](https://www.npmjs.com/package/@verivox/tiny-date-picker)
+
 A light-weight date picker with zero dependencies
 
 - Typescript
