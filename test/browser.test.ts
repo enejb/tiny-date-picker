@@ -19,6 +19,8 @@ if (process.env['CHROME_PATH']) {
     options.setChromeBinaryPath(process.env['CHROME_PATH'])
 }
 
+const endpoint = process.env['E2E_ENDPOINT'] || 'http://localhost:8081/test/'
+
 
 /**
  * @type {webdriver.ThenableWebDriver}
@@ -40,7 +42,7 @@ describe('browser', () => {
 
     describe('modal mode', () => {
         beforeEach(async () => {
-            await driver.get('http://localhost:8080/test/')
+            await driver.get(endpoint)
             await driver.wait(until.elementLocated(By.css('.modal-txt')), 2000, 'could not find expected modal on page!')
         })
 
@@ -347,7 +349,7 @@ describe('browser', () => {
 
     describe('dropdown mode', () => {
         beforeEach(async () => {
-            await driver.get('http://localhost:8080/test/')
+            await driver.get(endpoint)
             await driver.wait(until.elementLocated(By.css('.non-modal-txt')), 2000, 'could not find expected non-modal on page!')
         })
 
@@ -477,7 +479,7 @@ describe('browser', () => {
 
     describe('permanent mode', () => {
         beforeEach(async () => {
-            await driver.get('http://localhost:8080/test/')
+            await driver.get(endpoint)
             // await driver.wait(until.elementLocated(By.css('.non-modal-txt')), 2000, 'could not find expected non-modal on page!')
         })
 
