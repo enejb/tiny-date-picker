@@ -1,8 +1,19 @@
 const path = require('path');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const TerserJSPlugin = require('terser-webpack-plugin');
 
-const common = {
-    mode: 'development',
+
+module.exports = {
+    mode: 'production',
+    entry: './src/index.ts',
+    optimization: {
+        minimizer: [
+            new TerserJSPlugin({}), 
+            new OptimizeCSSAssetsPlugin({})
+        ],
+    },
     module: {
         rules: [
             {
@@ -19,14 +30,9 @@ const common = {
                 test: /\.css$/,
                 use: [
                     MiniCssExtractPlugin.loader,
-                    { 
+                    {
                         loader: "css-loader",
-                        options: {
-                            modules: {
-                              mode: 'global',
-                            },
-                          },
-                 },
+                    },
                 ]
             }
         ]
@@ -34,36 +40,17 @@ const common = {
     resolve: {
         extensions: ['.ts']
     },
+    output: {
+        library: 'TinyDatePicker',
+        filename: 'tiny-date-picker.js',
+        path: path.resolve(__dirname, 'dist'),
+        globalObject: 'this'
+    },
     plugins: [
-        new MiniCssExtractPlugin()
+        new CleanWebpackPlugin(),
+        new MiniCssExtractPlugin({
+            filename: 'tiny-date-picker.css',
+        })
     ]
 }
 
-const commonOutput = {
-    filename: '[name]',
-    path: path.resolve(__dirname, 'dist'),
-    globalObject: 'this'
-}
-
-const TinyDatePicker = {
-    entry: ['./src/date-picker.ts', './src/date-picker.css'],
-    output: {
-        library: 'TinyDatePicker',
-        ...commonOutput
-    },
-    ...common
-}
-
-const TinyDateRangePicker = {
-    entry: ['./src/date-range-picker.ts', './src/date-range-picker.css'],
-    output: {
-        library: 'TinyDateRangePicker',
-        ...commonOutput
-    },
-    ...common
-}
-
-module.exports = [
-    TinyDatePicker,
-    TinyDateRangePicker
-]

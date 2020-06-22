@@ -7,8 +7,7 @@
     <meta name="author" content="Chris Davies - http://chrisdavies.github.io/">
     <meta name="viewport" content="width=device-width">
     <meta name="description" content="A tiny, responsive, modern, zero-dependency date picker">
-    <link rel="stylesheet" href="../dist/TinyDatePickerStyle.css">
-    <link rel="stylesheet" href="../dist/TinyDateRangePickerStyle.css">
+    <link rel="stylesheet" href="../dist/tiny-date-picker.css">
     <style>
         * {
             box-sizing: border-box;
@@ -144,10 +143,8 @@
     </nav>
 </main>
 
-<script src="/dist/TinyDatePicker.js"></script>
-<script src="/dist/TinyDateRangePicker.js"></script>
+<script src="/dist/tiny-date-picker.js"></script>
 <script>
-    // window.addEventListener("load", () => {
         TinyDatePicker.DatePicker('.modal-txt')
             .on({
                 open: function () {
@@ -167,7 +164,6 @@
         TinyDatePicker.DatePicker('.non-modal-txt', {
             mode: 'dp-below',
         });
-    // })
 </script>
 </body>
 

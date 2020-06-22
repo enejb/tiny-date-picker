@@ -107,7 +107,7 @@ export function DateRangePicker(container: HTMLElement, opts: IDateRangePickerOp
         end: dt > state.start ? dt : state.start,
       });
     }
-  };
+  }
 
   function setState(newState: IDateRangePickerState) {
     state = { ...newState }

@@ -8,7 +8,7 @@
  * @returns {Date}
  */
 export function now() {
-  var dt = new Date();
+  const dt = new Date();
   dt.setHours(0, 0, 0, 0);
   return dt;
 }
@@ -46,11 +46,11 @@ export function shiftDay(dt: Date, n: number) {
  *                       value, defaults to false
  * @returns {Date}
  */
-export function shiftMonth(dt: Date, n: number, wrap: boolean = false) {
+export function shiftMonth(dt: Date, n: number, wrap = false) {
   dt = new Date(dt);
 
-  var dayOfMonth = dt.getDate();
-  var month = dt.getMonth() + n;
+  const dayOfMonth = dt.getDate();
+  const month = dt.getMonth() + n;
 
   dt.setDate(1);
   dt.setMonth(wrap ? (12 + month) % 12 : month);

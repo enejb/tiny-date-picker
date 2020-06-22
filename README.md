@@ -1,23 +1,24 @@
 # Tiny Date Picker
 
-A light-weight date picker with zero dependencies.
+A light-weight date picker with zero dependencies
 
+- Typescript
 - Zero dependencies
-- Roughly 3.5KB minified and gzipped
-- IE9+
+- Roughly 4KB minified and gzipped
 - Mobile-friendly/responsive
 - Supports multiple languages
+
+The TinyDatePicker was originally developed by Chris Davies, but seems to be discontinued.
 
 
 ## Installation
 
-    npm install --save tiny-date-picker
+    npm install --save @verivox/tiny-date-picker
 
 
 ## Usage
 
-Include a reference to `tiny-date-picker.css` and `tiny-date-picker.js`, or import
-it `import TinyDatePicker from 'tiny-date-picker';` then call it like this:
+Include a reference to `tiny-date-picker.css` and `tiny-date-picker.js`, or import it `import TinyDatePicker from 'tiny-date-picker';` then call it like this:
 
 ```javascript
 // Initialize a date picker on the specified input element
@@ -27,15 +28,19 @@ DatePicker(document.querySelector('input'));
 DatePicker('.some-class-or-id-or-whatever');
 ```
 
-## Documentation
+Have a look at the (./test/index.html)[./test/index.html]-file for further usage examples.
 
-- [TinyDatePicker documentation](./docs/tiny-date-picker.md)
-- [DateRangePicker documentation](./docs/date-range-picker.md)
+
+## Authors
+
+* Kim Almasan <kim@kumbier.it>
+* Lars Kumbier <lars@kumbier.it>
 
 
 ## License MIT
 
-Copyright (c) 2020 Verivox GmbH (rewrite in typescript; original code by "Chris Davies <ferociousturtle@gmail.com>")
+Copyright (c) 2020 Verivox GmbH (transformed to typescript)
+Copyright (c) 2018 Chris Davies (Original library)
 
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
