@@ -44,6 +44,7 @@ module.exports = {
         library: 'TinyDatePicker',
         filename: 'tiny-date-picker.js',
         path: path.resolve(__dirname, 'dist'),
+        libraryTarget: "umd",
         globalObject: 'this'
     },
     plugins: [

@@ -1,7 +1,7 @@
 export interface IDatePickerOptions {
     lang: ILanguage;
     mode: 'dp-modal' | 'dp-below' | 'dp-permanent';
-    highlightedDate: Date;
+    highlightedDate: Date | undefined | null;
     format: (dt: Date) => string;
     parse: (candidate: Date | string) => Date;
     dateClass: (dt: Date) => string;

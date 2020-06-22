@@ -9,7 +9,7 @@ import { IDatePickerOptions } from './interfaces';
  * @param {DatePickerOptions} opts The options for initializing the date picker
  * @returns {DatePicker}
  */
-export declare function DatePicker(input: HTMLInputElement | string, opts: IDatePickerOptions): {
+export declare function DatePicker(input: HTMLInputElement | string, opts: Partial<IDatePickerOptions>): {
     readonly state: import("./interfaces").IState;
     on: (name: string | {
         [key: string]: (name: string, arg: any) => void;

@@ -14,7 +14,7 @@ import Emitter from './lib/emitter';
  * @param {DatePickerOptions} opts The options for initializing the date picker
  * @returns {DatePicker}
  */
-export function DatePicker(input: HTMLInputElement | string, opts: IDatePickerOptions) {
+export function DatePicker(input: HTMLInputElement | string, opts: Partial<IDatePickerOptions>) {
   const emitter = Emitter();
   const options = DatePickerOptions(opts);
   const mode = Mode(input, emit, options);

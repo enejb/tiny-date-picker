@@ -1,6 +1,6 @@
 {
   "name": "@verivox/tiny-date-picker",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "A small, typed, dependency-free date picker",
   "main": "dist/tiny-date-picker.js",
   "types": "dist/index.d.ts",
