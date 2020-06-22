@@ -1,14 +1,24 @@
-/* global expect, beforeAll, afterAll */
+import dotenv from 'dotenv'
 import webdriver, { By, ThenableWebDriver, until } from 'selenium-webdriver'
 import chrome from 'selenium-webdriver/chrome'
 
+dotenv.config()
+
 const options = new chrome.Options()
 options.addArguments(
-    '--headless',
     // Use --disable-gpu to avoid an error from a missing Mesa library, as per
     // https://chromium.googlesource.com/chromium/src/+/lkgr/headless/README.md
     '--disable-gpu'
 )
+
+if (!process.env['NO_HEADLESS']) {
+    options.addArguments('--headless')
+}
+
+if (process.env['CHROME_PATH']) {
+    options.setChromeBinaryPath(process.env['CHROME_PATH'])
+}
+
 
 /**
  * @type {webdriver.ThenableWebDriver}

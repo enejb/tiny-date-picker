@@ -1,7 +1,4 @@
-node_modules
-shots
-*.log
-*.jar
-todo.md
-.idea
-.vscode
+/node_modules/
+/.idea/
+/.vscode/
+/.env
