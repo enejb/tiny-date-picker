@@ -18,7 +18,7 @@ interface IHandlers {
  * @returns {EventEmitter}
  */
 export default function Emitter() {
-  let handlers: IHandlers = {};
+  var handlers: IHandlers = {};
 
   function onOne(name: string, handler: TEmitterFn) {
     (handlers[name] = (handlers[name] || [])).push(handler);

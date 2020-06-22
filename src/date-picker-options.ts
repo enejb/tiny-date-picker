@@ -6,7 +6,7 @@ import { IDatePickerOptions } from './interfaces'
 import { now, shiftYear, dateOrParse } from './lib/date-manip';
 import { cp } from './lib/fns';
 
-const english = {
+var english = {
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: [
         'January',
@@ -36,7 +36,7 @@ const english = {
  */
 export function DatePickerOptions(_options: Partial<IDatePickerOptions> = {}) {
     const options = cp(defaults(), _options);
-    const parse = dateOrParse(options.parse);
+    var parse = dateOrParse(options.parse);
     options.lang = cp(english, options.lang);
     options.parse = parse;
     options.inRange = makeInRangeFn(options);
@@ -64,7 +64,7 @@ function defaults(): any {
         },
 
         parse: function (candidate: Date | string): Date {
-            const date = new Date(candidate);
+            var date = new Date(candidate);
             return isNaN(date.valueOf()) ? now() : date;
         },
 
@@ -82,7 +82,7 @@ function defaults(): any {
 }
 
 function makeInRangeFn(opts: IDatePickerOptions) {
-    const inRange = opts.inRange; // Cache this version, and return a variant
+    var inRange = opts.inRange; // Cache this version, and return a variant
 
     return function (dt: Date, dp: any) {
         const earlierThanMin = opts.min ? opts.min <= dt : true

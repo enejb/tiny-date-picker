@@ -18,7 +18,7 @@ export function DatePicker(input: HTMLInputElement | string, opts: IDatePickerOp
   const emitter = Emitter();
   const options = DatePickerOptions(opts);
   const mode = Mode(input, emit, options);
-  const me = {
+  var me = {
     get state() {
       return mode.state;
     },
