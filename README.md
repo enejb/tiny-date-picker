@@ -8,11 +8,11 @@ A light-weight date picker with zero dependencies
 
 - Typescript
 - Zero dependencies
-- Roughly 4KB minified and gzipped
+- Roughly [5KB minified and gzipped](https://bundlephobia.com/result?p=@verivox/tiny-date-picker)
 - Mobile-friendly/responsive
 - Supports multiple languages
 
-The TinyDatePicker was originally developed by Chris Davies, but seems to be discontinued. This version is kept nearly identical from the API, but fixed some typos in the configuration and ported it to typescript.
+TinyDatePicker was originally developed by [Chris Davies](https://github.com/chrisdavies/tiny-date-picker), but seems to be discontinued.
 
 
 ## Installation
