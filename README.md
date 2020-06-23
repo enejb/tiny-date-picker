@@ -12,7 +12,7 @@ A light-weight date picker with zero dependencies
 - Mobile-friendly/responsive
 - Supports multiple languages
 
-The TinyDatePicker was originally developed by Chris Davies, but seems to be discontinued.
+The TinyDatePicker was originally developed by Chris Davies, but seems to be discontinued. This version is kept nearly identical from the API, but fixed some typos in the configuration and ported it to typescript.
 
 
 ## Installation
@@ -32,7 +32,7 @@ DatePicker(document.querySelector('input'));
 DatePicker('.some-class-or-id-or-whatever');
 ```
 
-Have a look at the (./test/index.html)[./test/index.html]-file for further usage examples.
+Have a look at the [./test/index.html](./test/index.html)-file for further usage examples.
 
 
 ## Authors
@@ -44,6 +44,7 @@ Have a look at the (./test/index.html)[./test/index.html]-file for further usage
 ## License MIT
 
 Copyright (c) 2020 Verivox GmbH (transformed to typescript)
+
 Copyright (c) 2018 Chris Davies (Original library)
 
 Permission is hereby granted, free of charge, to any person
