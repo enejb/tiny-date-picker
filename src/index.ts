@@ -5,5 +5,5 @@ import './date-range-picker.css'
 
 export {
     DatePicker,
-    DateRangePicker
+    DateRangePicker,
 }

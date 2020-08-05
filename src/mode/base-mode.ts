@@ -15,6 +15,20 @@ const views = {
     month: monthPicker,
 };
 
+(function () {
+
+    if ( typeof window.CustomEvent === "function" ) return false;
+
+    function CustomEvent ( event: any, params: any ) {
+        params = params || { bubbles: false, cancelable: false, detail: null };
+        var evt = document.createEvent( 'CustomEvent' );
+        evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
+        return evt;
+    }
+
+    (window as any).CustomEvent = CustomEvent;
+})();
+
 export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDatePickerOptions): IDatePicker {
     let detatchInputEvents: () => void; // A function that detaches all events from the input
     let closing = false; // A hack to prevent calendar from re-opening when closing.

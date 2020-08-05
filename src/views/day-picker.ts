@@ -155,9 +155,9 @@ function selectDay(e: KeyboardEvent, dp: any) {
   if (!e.target) {
     return
   }
-  
+
   const evTarget = e.target as HTMLElement
-  
+
   dp.setState({
     selectedDate: new Date(parseInt(evTarget.getAttribute('data-date') as string)),
   });
