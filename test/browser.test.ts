@@ -1,8 +1,6 @@
-import dotenv from 'dotenv'
 import webdriver, { By, ThenableWebDriver, until } from 'selenium-webdriver'
 import chrome from 'selenium-webdriver/chrome'
 
-dotenv.config()
 
 const options = new chrome.Options()
 options.addArguments(
