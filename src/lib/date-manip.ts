@@ -126,7 +126,13 @@ export function constrainDate(dt: Date, min: Date, max: Date) {
          (dt > max) ? max :
          dt;
 }
+/**
+ * Removes the time from a date.
+ *
+ * @param {Date} dt
 
+ * @returns {Date}
+ */
 function dropTime(dt: Date | string) {
   dt = new Date(dt);
   dt.setHours(0, 0, 0, 0);
