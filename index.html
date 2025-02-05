@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tiny Date Picker</title>
+    <link rel="stylesheet" href="/src/style.css">
+  </head>
+  <body>
+    <h1>Tiny Date Picker</h1>
+    <div class="form-field">
+        <label>Pick a date:</label>
+        <input type="text" class="modal-txt" tabindex="400"/>
+    </div>
+    <div class="form-field">
+        <label>And another:</label>
+        <input type="text" class="non-modal-txt txt-below" tabindex="401"/>
+    </div>
+
+    <script type="module">
+      import { DatePicker } from '/src/index.ts';
+
+      DatePicker('.modal-txt')
+        .on({
+          open: function () {
+            console.log('OPENED');
+          },
+          close: function () {
+            console.log('CLOSED');
+          },
+          select: function (_, dp) {
+            console.log('SELECT ', _, dp.state.selectedDate);
+          },
+          statechange: function (_, dp) {
+            console.log('STATE CHANGE ', dp.state);
+          },
+        });
+
+      DatePicker( '.non-modal-txt', {
+        mode: 'dp-below'
+      });
+    </script>
+  </body>
+</html>

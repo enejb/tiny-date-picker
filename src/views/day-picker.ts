@@ -39,15 +39,16 @@ function render(dp: IDatePicker) {
   const today = now().getTime();
 
   return (
-    '<div class="dp-cal">' +
+    '<div role="dialog" tabindex="0" class="dp-cal">' +
       '<header class="dp-cal-header">' +
-        '<button tabindex="-1" type="button" class="dp-prev">Prev</button>' +
+
         '<button tabindex="-1" type="button" class="dp-cal-month">' +
           lang.months[hilightedMonth] +
         '</button>' +
         '<button tabindex="-1" type="button" class="dp-cal-year">' +
           highlightedDate!.getFullYear() +
         '</button>' +
+		'<button tabindex="-1" type="button" class="dp-prev">Prev</button>' +
         '<button tabindex="-1" type="button" class="dp-next">Next</button>' +
       '</header>' +
       '<div class="dp-days">' +

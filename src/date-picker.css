@@ -15,25 +15,50 @@
   border-radius: 4px;
   max-height: 400px;
   z-index: 1000;
-  padding-top: 6px;
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
-}
+  font-family: sans-serif;
+  padding: 2px 5px;
 
-.dp:before {
-  content: ' ';
-  height: 6px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: #3B99FC;
-  background: linear-gradient(-90deg, #3B99FC 0%, #8AEFC8 100%);
+  --dp-min-height: 300px;
+
+  --dp-today-color:#227BD7;
+  --dp-button-next-color: blue;
+
+  --dp-ui-background: transparent;
+  --dp-ui-color: #333;
+
+  --dp-ui-background-selected: #EEE;
+  --dp-ui-color-selected: #111;
+
+  --dp-ui-background-focus: transparent;
+  --dp-ui-color-focus: #111;
+
+
+  --dp-date-background: transparent;
+  --dp-date-color: #2c3338;
+
+  --dp-date-background-selected: #ab235a;
+  --dp-date-color-selected: #FFF;
+
+  --dp-date-background-focus: #c3c4c7;
+  --dp-date-color-focus: #1d2327;
+
+  --dp-date-background-hover: #c3c4c7;
+  --dp-date-color-hover: #1d2327;
+
+  --dp-date-background-disabled: transparent;
+  --dp-date-color-disabled: rgb(254, 230, 163);
+
+  --dp-today-color:#2a46ce;
+  --dp-date-edge-color: #787c82;
+
+  --dp-text-color: #3c434a;
 }
 
 .dp-permanent .dp {
   padding-top: 0;
-  border: 1px solid #EEE;
+  border: 1px solid var( --db-border-color );
   box-shadow: none;
 }
 
@@ -42,7 +67,7 @@
 }
 
 .dp-cal {
-  min-height: 300px;
+  min-height: var( --dp-min-height );
 }
 
 .dp-below {
@@ -74,13 +99,19 @@
 }
 
 .dp-months {
-  padding: 24px;
+	min-height: var( --dp-min-height );
+	padding: 8px;
+	display: grid;
+	grid-template-columns: auto auto auto;
+	grid-template-rows: auto auto auto auto;
+	column-gap: 8px;
+	row-gap: 8px;
 }
 
 .dp-years {
   box-sizing: border-box;
-  max-height: 400px;
-  padding: 8px 0;
+  max-height: calc( var( --dp-min-height ) + 16px);
+  padding: 8px 5px;
   overflow: auto !important; /* HACK for Chrome on Android */
 }
 
@@ -93,17 +124,15 @@
   text-align: center;
   text-decoration: none;
   position: relative;
-  color: #3B404D;
+  color: var( --dp-date-color );
   border-radius: 2px;
   border: 0;
-  background: transparent;
+  background: var( --dp-date-background );
 }
 
 .dp-cal-header {
   position: relative;
-  text-align: center;
-  padding-bottom: 16px;
-  background: #f5f5f5;
+  padding: 0 8px 13px;
 }
 
 .dp-next,
@@ -113,10 +142,10 @@
   height: 30px;
   overflow: hidden;
   top: 14px;
-  color: #777;
+  color: var( --dp-ui-color );
   border-radius: 2px;
   border: 0;
-  background: transparent;
+  background: var( --dp-ui-background );
 }
 
 .dp-next:focus,
@@ -124,15 +153,16 @@
 .dp-next:hover,
 .dp-prev:hover {
   outline: none;
-  color: inherit;
+	background: var( --dp-ui-background-focus );
+	color: var( --dp-ui-color-focus );
 }
 
 .dp-prev {
-  left: 24px;
+	right: 54px;
 }
 
 .dp-next {
-  right: 24px;
+	right: 8px;
 }
 
 .dp-prev:before,
@@ -163,20 +193,20 @@
 .dp-cal-year {
   display: inline-block;
   font-size: 1.4em;
-  padding: 16px 8px 8px;
+  padding: 8px 8px;
   outline: none;
+  margin-top: 8px;
 }
 
 .dp-cal-footer {
   text-align: center;
-  background: #f5f5f5;
 }
 
 .dp-day-today:after {
   content: '';
   height: 0;
   width: 0;
-  border: 7px solid #227BD7;
+  border: 7px solid var( --dp-today-color );
   border-bottom-color: transparent;
   border-left-color: transparent;
   position: absolute;
@@ -192,9 +222,9 @@
   width: 33%;
   padding: 8px;
   text-decoration: none;
-  color: inherit;
   border: 0;
-  background: transparent;
+  background: var( --dp-ui-background );
+  color: var( --dp-ui-color );
 }
 
 .dp-permanent .dp-close,
@@ -209,8 +239,8 @@
 .dp-prev:active,
 .dp-cal-month:active,
 .dp-cal-year:active {
-  background: #75BCFC;
-  color: white;
+	background: var( --dp-ui-background-selected);
+	color: var( --dp-ui-color-selected );
 }
 
 @media screen and (min-device-width: 1200px) {
@@ -228,8 +258,8 @@
   .dp-cal-month:hover,
   .dp-cal-year:hover,
   .dp-cal-year:focus {
-    background: #75BCFC;
-    color: white;
+    background: var( --dp-ui-background-selected);
+	color: var( --dp-ui-color-selected );
   }
 }
 
@@ -242,57 +272,62 @@
 }
 
 .dp-col-header {
-  color: #AAA;
   text-transform: uppercase;
-  font-weight: 300;
-  font-size: 0.8em;
   padding: 8px 0;
+  color: var( --dp-text-color );
 }
 
 .dp-month {
-  width: 33%;
-  display: inline-block;
-  padding: 8px;
+  font-size: 1.4em;
 }
 
 .dp-year {
   display: block;
   padding: 8px 40px;
   width: 100%;
+  font-size: 1.4em;
 }
 
 .dp-edge-day {
-  color: #AAA;
+  color: var(--dp-date-edge-color);
+}
+
+.dp-selected {
+	background: var(--dp-date-background-selected);
+	color: var(--dp-date-color-selected);
+}
+
+.dp-current {
+	background: var(--dp-date-background-selected);
+	color: var(--dp-date-color-selected);
+}
+
+.dp-current:focus,
+.dp-day:focus,
+.dp-month:focus,
+.dp-selected:focus,
+.dp-year:focus {
+  outline: none;
+  background: var(--dp-date-background-focus);
+  color: var(--dp-date-color-focus);
 }
 
 .dp-day:hover,
 .dp-month:hover,
 .dp-year:hover,
-.dp-current:focus,
-.dp-current,
-.dp-day:focus,
-.dp-month:focus,
-.dp-year:focus {
-  outline: none;
-  background: #75BCFC;
-  color: white;
-}
-
-.dp-selected:hover,
-.dp-selected:focus,
-.dp-selected {
-  background: #3B99FC;
-  color: #FFF;
+.dp-selected:hover {
+  background: var(--dp-date-background-hover);
+  color: var(--dp-date-color-hover);
 }
 
 .dp-day-disabled {
-  background: transparent;
-  color: #DDD;
+	background: var(--dp-date-background-disabled);
+	color: var(--dp-date-color-disabled);
 }
 
 .dp-day-disabled:focus,
 .dp-day-disabled:hover {
-  background: #DDD;
+  background: var(--dp-date-background-disabled);
 }
 
 .dp-focuser {
