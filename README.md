@@ -35,6 +35,10 @@ DatePicker('.some-class-or-id-or-whatever');
 Have a look at the [./test/index.html](./test/index.html)-file for further usage examples.
 
 
+## Development
+
+npm start
+
 ## Authors
 
 * Kim Almasan <kim@kumbier.it>
