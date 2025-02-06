@@ -225,6 +225,26 @@ function attachInputEvents(input: HTMLElement, dp: IDatePicker) {
             }
         }),
 
+        on( 'keydown', input, function(e) {
+            if (!e || !e.target) {
+                return
+            }
+
+            const ke = e as KeyboardEvent;
+
+            if( ke.code === Key.down) {
+                e.preventDefault();
+                dp.open();
+                focusCurrent(dp);
+                return;
+            }
+
+            if( ke.code === Key.esc) {
+                dp.close(true);
+                return;
+            }
+
+        }),
         on('focus', input, bufferShow),
 
         on('input', input, function (e) {
