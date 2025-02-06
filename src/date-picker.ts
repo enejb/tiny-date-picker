@@ -4,8 +4,8 @@
 
 import { DatePickerOptions } from './date-picker-options';
 import { IDatePickerOptions } from './interfaces';
-import Mode from './mode/index';
 import Emitter from './lib/emitter';
+import Mode from './mode/index';
 
 /**
  * DatePicker constructs a new date picker for the specified input
