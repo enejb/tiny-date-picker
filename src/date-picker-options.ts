@@ -6,7 +6,7 @@ import { IDatePickerOptions } from './interfaces'
 import { now, shiftYear, dateOrParse } from './lib/date-manip';
 import { cp } from './lib/fns';
 
-var english = {
+const english = {
     days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months: [
         'January',
@@ -31,12 +31,13 @@ var english = {
  * DatePickerOptions constructs a new date picker options object, overriding
  * default values with any values specified in opts.
  *
+ *  @param _options
+ *
  * @returns {DatePickerOptions}
- * @param _options
  */
 export function DatePickerOptions(_options: Partial<IDatePickerOptions> = {}) {
     const options = cp(defaults(), _options);
-    var parse = dateOrParse(options.parse);
+    const parse = dateOrParse(options.parse);
     options.lang = cp(english, options.lang);
     options.parse = parse;
     options.inRange = makeInRangeFn(options);
@@ -47,8 +48,11 @@ export function DatePickerOptions(_options: Partial<IDatePickerOptions> = {}) {
 
     return options;
 }
-
-function defaults(): any {
+/**
+ *
+ * @returns {IDatePickerOptions}
+ */
+function defaults(): IDatePickerOptions {
     return {
         lang: english,
 
@@ -64,7 +68,7 @@ function defaults(): any {
         },
 
         parse: function (candidate: Date | string): Date {
-            var date = new Date(candidate);
+            const date = new Date(candidate);
             return isNaN(date.valueOf()) ? now() : date;
         },
 
@@ -82,7 +86,7 @@ function defaults(): any {
 }
 
 function makeInRangeFn(opts: IDatePickerOptions) {
-    var inRange = opts.inRange; // Cache this version, and return a variant
+    const inRange = opts.inRange; // Cache this version, and return a variant
 
     return function (dt: Date, dp: any) {
         const earlierThanMin = opts.min ? opts.min <= dt : true
