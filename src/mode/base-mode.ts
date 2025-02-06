@@ -303,9 +303,8 @@ function attachContainerEvents(dp: IDatePicker) {
     }));
 
     on('keydown', el, function (e) {
-        const ke = e as KeyboardEvent
-        const code = ke.code || ke.keyCode
-        if (code === Key.enter) {
+        const ke = e as KeyboardEvent;
+        if (ke.code === Key.enter) {
             onClick(ke);
         } else {
             dp.currentView().onKeyDown(ke, dp);
