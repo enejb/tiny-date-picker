@@ -42,16 +42,16 @@ function render(dp: IDatePicker) {
     '<div role="dialog" tabindex="0" class="dp-cal">' +
       '<header class="dp-cal-header">' +
 
-        '<button tabindex="-1" type="button" class="dp-cal-month">' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-cal-month">' +
           lang.months[hilightedMonth] +
         '</button>' +
-        '<button tabindex="-1" type="button" class="dp-cal-year">' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-cal-year">' +
           highlightedDate!.getFullYear() +
         '</button>' +
-		'<button tabindex="-1" type="button" class="dp-prev">Prev</button>' +
-        '<button tabindex="-1" type="button" class="dp-next">Next</button>' +
+		'<button tabindex="-1" type="button" class="dp-focusable dp-prev">Prev</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-next">Next</button>' +
       '</header>' +
-      '<div class="dp-days">' +
+      '<div class="dp-days" role="grid">' +
         dayNames.map(function (name: string, i: number) {
           return (
             '<span class="dp-col-header">' + dayNames[(i + dayOffset) % dayNames.length] + '</span>'
@@ -70,16 +70,16 @@ function render(dp: IDatePicker) {
           className += ' ' + opts.dateClass(date);
 
           return (
-            '<button tabindex="-1" type="button" class="' + className + '" data-date="' + date.getTime() + '">' +
+            '<button tabindex="-1" type="button" role="gridcell" aria-role="button" aria-label="'+date.toDateString()+'" class="' + className + '" data-date="' + date.getTime() + '">' +
               date.getDate() +
             '</button>'
           );
         }) +
       '</div>' +
       '<footer class="dp-cal-footer">' +
-        '<button tabindex="-1" type="button" class="dp-today">' + lang.today + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-clear">' + lang.clear + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-close">' + lang.close + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-today">' + lang.today + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-clear">' + lang.clear + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-close">' + lang.close + '</button>' +
       '</footer>' +
     '</div>'
   );
@@ -91,8 +91,8 @@ function render(dp: IDatePicker) {
  * @param {Event} e
  * @param {DatePickerContext} dp
  */
-function keyDown(e: KeyboardEvent, dp: any) {
-  const key = e.code || e.keyCode;
+function keyDown(ke: KeyboardEvent, dp: IDatePicker) {
+  const key = ke.code;
   const shiftBy =
     (key === Key.left) ? -1 :
     (key === Key.right) ? 1 :
@@ -103,11 +103,50 @@ function keyDown(e: KeyboardEvent, dp: any) {
   if (key === Key.esc) {
     dp.close();
   } else if (shiftBy) {
-    e.preventDefault();
-    dp.setState({
-      highlightedDate: shiftDay(dp.state.highlightedDate, shiftBy)
-    });
+    ke.preventDefault();
+	if( ke.shiftKey ) {
+		// shift month
+		if ( shiftBy > 0 ) {
+			dp.setState({
+				highlightedDate: shiftMonth( dp?.state?.highlightedDate, 1)
+			});
+		} else {
+			dp.setState({
+				highlightedDate:shiftMonth( dp?.state?.highlightedDate, -1)
+			});
+		}
+	} else {
+		dp.setState({
+			highlightedDate: shiftDay( dp?.state?.highlightedDate, shiftBy)
+		});
+	}
+
+  } else if ( key === Key.tab ) {
+	moveFocusToNextButton( ke, dp );
   }
+}
+/**
+ * Allows the user to move focus between buttons with the tab.
+ *
+ * @param {Event} e
+ * @param {DatePickerContext} dp
+ */
+function moveFocusToNextButton( ke: KeyboardEvent, dp: IDatePicker ) {
+	ke.preventDefault();
+	const buttons = dp.el?.querySelectorAll( ".dp-focusable" );
+
+    const focusedIndex = Array.from(buttons).indexOf( document.activeElement );
+	if (focusedIndex !== -1) {
+        let nextIndex = ke.shiftKey ? focusedIndex - 1 : focusedIndex + 1;
+        // Loop around if at the start or end
+        if (nextIndex >= buttons.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = buttons.length - 1;
+
+        buttons[nextIndex].focus();
+	} else {
+		buttons[0].focus();
+	}
+
 }
 
 function selectToday(e: Event, dp: any) {
