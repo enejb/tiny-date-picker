@@ -6,14 +6,16 @@
     <title>Tiny Date Picker</title>
     <link rel="stylesheet" href="/src/style.css">
 	<style>
+		.form-field{
+			padding-bottom: 20px;
+		}
+		.form-field label {
+			display: block;
+		}
 		@media (prefers-color-scheme: dark) {
 			body {
 				background-color: #333;
 				color: #fff;
-			}
-			.form-field {
-				background-color: #444;
-
 			}
 			.form-field label {
 				color: #fff;
@@ -35,6 +37,10 @@
     <div class="form-field">
         <label>And another:</label>
         <input type="text" class="non-modal-txt txt-below" tabindex="401"/>
+    </div>
+	<div class="form-field">
+        <label>Plain Date Field another:</label>
+        <input type="date" />
     </div>
 
     <script type="module">
