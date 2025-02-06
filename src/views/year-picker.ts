@@ -48,10 +48,10 @@ function onChooseYear(e: Event, dp: any) {
   });
 }
 
-function keyDown(e: KeyboardEvent, dp: any) {
-  const key = e.code || e.keyCode;
+function keyDown(ke: KeyboardEvent, dp: IDatePicker) {
+  const key = ke.code;
   const opts = dp.opts;
-  const shiftBy =
+  let shiftBy =
     (key === Key.left || key === Key.up) ? 1 :
     (key === Key.right || key === Key.down) ? -1 :
     0;
@@ -61,9 +61,11 @@ function keyDown(e: KeyboardEvent, dp: any) {
       view: 'day',
     });
   } else if (shiftBy) {
-    e.preventDefault();
-    const shiftedYear = shiftYear(dp.state.highlightedDate, shiftBy);
-
+    ke.preventDefault();
+	if( ke.shiftKey ) {
+		shiftBy = shiftBy * 10;
+	}
+	const shiftedYear = shiftYear(dp.state.highlightedDate, shiftBy);
     dp.setState({
       highlightedDate: constrainDate(shiftedYear, opts.min, opts.max),
     });
