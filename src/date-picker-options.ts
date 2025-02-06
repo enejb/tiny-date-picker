@@ -57,7 +57,7 @@ function defaults(): IDatePickerOptions {
         lang: english,
 
         // Possible values: dp-modal, dp-below, dp-permanent
-        mode: 'dp-modal',
+        mode: 'dp-below',
 
         // The date to hilight initially if the date picker has no
         // initial value.
