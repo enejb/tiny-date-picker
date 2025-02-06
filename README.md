@@ -38,6 +38,8 @@ Have a look at the [./test/index.html](./test/index.html)-file for further usage
 ## Development
 
 npm start
+npm run tests
+npm run build
 
 ## Authors
 
