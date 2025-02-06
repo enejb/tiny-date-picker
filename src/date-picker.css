@@ -152,7 +152,6 @@
 .dp-prev:focus,
 .dp-next:hover,
 .dp-prev:hover {
-  outline: none;
 	background: var( --dp-ui-background-focus );
 	color: var( --dp-ui-color-focus );
 }
@@ -194,7 +193,6 @@
   display: inline-block;
   font-size: 1.4em;
   padding: 8px 8px;
-  outline: none;
   margin-top: 8px;
 }
 
