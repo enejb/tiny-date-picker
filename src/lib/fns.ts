@@ -12,8 +12,8 @@
 export function bufferFn(ms: number, fn: (...args:any) => any) {
   let timeout: any = undefined;
   return function () {
-    clearTimeout(timeout);
-    timeout = setTimeout(fn, ms);
+	clearTimeout(timeout);
+	timeout = setTimeout(fn, ms);
   };
 }
 
@@ -32,10 +32,10 @@ export function noop() { }
 export function cp(...args: any[]) {
   const o1 = args[0];
   for (let i = 1; i < args.length; ++i) {
-    const o2 = args[i] || {};
-    for (const key in o2) {
-      o1[key] = o2[key];
-    }
+	const o2 = args[i] || {};
+	for (const key in o2) {
+		o1[key] = o2[key];
+	}
   }
   return o1;
 }

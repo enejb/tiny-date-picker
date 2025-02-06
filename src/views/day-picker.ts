@@ -39,17 +39,17 @@ function render(dp: IDatePicker) {
   const today = now().getTime();
 
   return (
-    '<div role="dialog" tabindex="0" class="dp-cal">' +
+    '<div tabindex="0" class="dp-cal" aria-label="Use the arrow keys to navigate bewtween the dates. Use tab to jump to more controls.">' +
       '<header class="dp-cal-header">' +
 
-        '<button tabindex="-1" type="button" class="dp-focusable dp-cal-month">' +
+        '<button tabindex="-1" type="button" aria-label="Use the space key to enter the month picker." class="dp-focusable dp-cal-month">' +
           lang.months[hilightedMonth] +
         '</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-cal-year">' +
+        '<button tabindex="-1" type="button" aria-label="Use the space	 key to enter the month picker." class="dp-focusable dp-cal-year">' +
           highlightedDate!.getFullYear() +
         '</button>' +
-		'<button tabindex="-1" type="button" class="dp-focusable dp-prev">Prev</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-next">Next</button>' +
+		'<button tabindex="-1" type="button" class="dp-focusable dp-prev">Previous Month</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-next">Next Month</button>' +
       '</header>' +
       '<div class="dp-days" role="grid">' +
         dayNames.map(function (name: string, i: number) {
@@ -77,9 +77,9 @@ function render(dp: IDatePicker) {
         }) +
       '</div>' +
       '<footer class="dp-cal-footer">' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-today">' + lang.today + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-clear">' + lang.clear + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-close">' + lang.close + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-today" aria-label="Use the spacekey to pick today\'s date">' + lang.today + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-clear" aria-label="Use the spacekey to clear the selection">' + lang.clear + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-close" aria-label="Use the spacekey to close the date picker">' + lang.close + '</button>' +
       '</footer>' +
     '</div>'
   );

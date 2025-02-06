@@ -204,6 +204,8 @@ function createContainerElement(opts: IDatePickerOptions, containerHTML: string)
 }
 
 function attachInputEvents(input: HTMLElement, dp: IDatePicker) {
+	input.ariaLive = 'polite';
+	input.ariaLabel = 'You are on a date picker input. Use the down key to focus into the date picker. Or type the date in the format MM/DD/YYYY';
     const bufferShow = bufferFn(5, function () {
         if (dp.shouldHide()) {
             dp.close();
