@@ -25,7 +25,7 @@ function render(dp: any) {
   const selectedYear = state.selectedDate.getFullYear();
 
   return (
-    '<div class="dp-years" aria-label="Use the up and down arrow keys to navigate bewtween the years. Use the space key to select it.">' +
+    '<div class="dp-years" aria-label="Use the up and down arrow keys to navigate between the years. Use the space key to select it.">' +
       mapYears(dp, function (year: number) {
         let className = 'dp-year';
         className += (year === currentYear ? ' dp-current' : '');

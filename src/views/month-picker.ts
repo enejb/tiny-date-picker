@@ -34,7 +34,7 @@ function render(dp: any) {
   const currentMonth = currentDate.getMonth();
 
   return (
-    '<div class="dp-months" aria-label="Use the arrow keys to navigate bewtween the months. Use the space key to select it.">' +
+    '<div class="dp-months" aria-label="Use the arrow keys to navigate between the months. Use the space key to select it.">' +
       months.map(function (month: string, i: number) {
         let className = 'dp-month';
         className += (currentMonth === i ? ' dp-current' : '');
