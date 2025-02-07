@@ -26,7 +26,7 @@ function onChooseMonth(e: Event, dp: any) {
  * @param {DatePickerContext} dp the date picker context
  * @returns {string}
  */
-function render(dp: any) {
+function render(dp: IDatePicker) {
   const opts = dp.opts;
   const lang = opts.lang;
   const months = lang.months;
@@ -34,7 +34,7 @@ function render(dp: any) {
   const currentMonth = currentDate.getMonth();
 
   return (
-    '<div class="dp-months" aria-label="Use the arrow keys to navigate between the months. Use the space key to select it.">' +
+    '<div class="dp-months" aria-label="'+ lang.ariaLabel.monthPicker +'">' +
       months.map(function (month: string, i: number) {
         let className = 'dp-month';
         className += (currentMonth === i ? ' dp-current' : '');

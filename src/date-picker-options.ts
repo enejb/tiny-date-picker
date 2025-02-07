@@ -25,6 +25,18 @@ const english = {
     today: 'Today',
     clear: 'Clear',
     close: 'Close',
+	ariaLabel: {
+		enterPicker: 'You are on a date picker input. Use the down key to focus into the date picker. Or type the date in the format MM/DD/YYYY',
+		dayPicker: 'You are currently inside the date picker, use the arrow keys to navigate between the dates. Use tab key to jump to more controls.',
+		monthPicker: 'You are currently inside the month picker, use the arrow keys to navigate between the months. Use the space key to select it.',
+		yearPicker: 'You are currently inside the year picker, use the up and down arrow keys to navigate between the years. Use the space key to select it.',
+		monthPickerButton: 'Month picker. Use the space key to enter the month picker.',
+		yearPickerButton: 'Year picker. Use the space key to enter the month picker.',
+		dayButton: 'Use the space key to select the date.',
+		todayButton: 'Today button. Use the space key to select the current date.',
+		clearButton: 'Clear button. Use the space key to clear the date picker.',
+		closeButton: 'Close button. Use the space key to close the date picker.',
+	}
 };
 
 /**

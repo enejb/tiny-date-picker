@@ -19,13 +19,13 @@ export default {
  * @param {DatePickerContext} dp the date picker context
  * @returns {string}
  */
-function render(dp: any) {
+function render(dp: IDatePicker) {
   const state = dp.state;
   const currentYear = state.highlightedDate.getFullYear();
   const selectedYear = state.selectedDate.getFullYear();
 
   return (
-    '<div class="dp-years" aria-label="Use the up and down arrow keys to navigate between the years. Use the space key to select it.">' +
+    '<div class="dp-years" aria-label="'+ dp.opts.lang.ariaLabel.monthPicker +'">' +
       mapYears(dp, function (year: number) {
         let className = 'dp-year';
         className += (year === currentYear ? ' dp-current' : '');

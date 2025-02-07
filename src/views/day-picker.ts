@@ -2,10 +2,9 @@
  * @file Manages the calendar / day-picker view.
  */
 
+import { IDatePicker, IPicker } from '../interfaces';
 import {Key} from '../lib/dom';
 import {now, datesEq, shiftMonth, shiftDay} from '../lib/date-manip';
-import { IDatePicker, IPicker } from '../interfaces';
-import { bufferFn } from '../lib/fns';
 
 export default {
   onKeyDown: keyDown,
@@ -40,10 +39,9 @@ function render(dp: IDatePicker) {
   const today = now().getTime();
 
   return (
-    '<div tabindex="0" class="dp-cal" aria-label="You are currently inside the date picker, use the arrow keys to navigate between the dates. Use tab key to jump to more controls.">' +
+    '<div tabindex="0" class="dp-cal" aria-label="'+ lang.ariaLabel.dayPicker +'">' +
       '<header class="dp-cal-header">' +
-
-        '<button tabindex="-1" type="button" aria-label="' + lang.months[hilightedMonth] + '. Month picker. Use the space key to enter the month picker." class="dp-focusable dp-cal-month">' +
+        '<button tabindex="-1" type="button" aria-label="' + lang.months[hilightedMonth] + lang.ariaLabel.monthPickerButton + '" class="dp-focusable dp-cal-month">' +
           lang.months[hilightedMonth] +
         '</button>' +
         '<button tabindex="-1" type="button" aria-label="' + highlightedDate!.getFullYear() + 'Year Picker. Use the space key to enter the year picker." class="dp-focusable dp-cal-year">' +
@@ -71,16 +69,16 @@ function render(dp: IDatePicker) {
           className += ' ' + opts.dateClass(date);
 
           return (
-            '<button tabindex="-1" type="button" aria-role="button" aria-label="'+date.toDateString()+'. use the space key to select it." class="' + className + '" data-date="' + date.getTime() + '">' +
+            '<button tabindex="-1" type="button" aria-role="button" aria-label="'+date.toDateString()+ lang.ariaLabel.dayButton + '" class="' + className + '" data-date="' + date.getTime() + '">' +
               date.getDate() +
             '</button>'
           );
         }) +
       '</div>' +
       '<footer class="dp-cal-footer">' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-today" aria-label="' + lang.today + ' Button. Use the space key to pick today\'s date">' + lang.today + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-clear" aria-label="' + lang.clear + ' Button. Use the space key to clear the selection and exit the picker.">' + lang.clear + '</button>' +
-        '<button tabindex="-1" type="button" class="dp-focusable dp-close" aria-label="' + lang.close + ' Button. Use the space key to close the date picker.">' + lang.close + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-today" aria-label="' + lang.ariaLabel.todayButton + '">' + lang.today + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-clear" aria-label="' + lang.ariaLabel.clearButton + '">' + lang.clear + '</button>' +
+        '<button tabindex="-1" type="button" class="dp-focusable dp-close" aria-label="' + lang.ariaLabel.closeButton + '">' + lang.close + '</button>' +
       '</footer>' +
     '</div>'
   );

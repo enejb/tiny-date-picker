@@ -136,7 +136,7 @@ export default function BaseMode(input: HTMLInputElement, emit: any, opts: IDate
 
             const hadFocus = dp.hasFocus();
             const html = dp.currentView().render(dp);
-            
+
             if (html) {
                 (dp.el.firstChild! as HTMLElement).innerHTML = html;
             }
@@ -205,7 +205,7 @@ function createContainerElement(opts: IDatePickerOptions, containerHTML: string)
 
 function attachInputEvents(input: HTMLElement, dp: IDatePicker) {
 	input.ariaLive = 'polite';
-	input.ariaLabel = 'You are on a date picker input. Use the down key to focus into the date picker. Or type the date in the format MM/DD/YYYY';
+	input.ariaLabel = dp.opts.lang.ariaLabel.dayPicker;
     const bufferShow = bufferFn(5, function () {
         if (dp.shouldHide()) {
             dp.close();

@@ -61,6 +61,17 @@ export interface ILanguage {
     today: string,
     clear: string,
     close: string
+	ariaLabel: {
+		dayPicker: string,
+		monthPicker: string,
+		yearPicker: string,
+		monthPickerButton: string,
+		yearPickerButton: string,
+		dayButton: string,
+		todayButton: string,
+		clearButton: string,
+		closeButton: string,
+	}
 }
 
 export interface IPicker {
